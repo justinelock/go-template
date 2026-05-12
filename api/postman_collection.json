@@ -1,0 +1,131 @@
+{
+  "info": {
+    "name": "pricing-assistant auth flow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8180"
+    },
+    {
+      "key": "username",
+      "value": "postman_{{$timestamp}}"
+    },
+    {
+      "key": "mobile",
+      "value": "139{{$timestamp}}"
+    },
+    {
+      "key": "password",
+      "value": "123456"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/healthz"
+      }
+    },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"mobile\": \"{{mobile}}\",\n  \"email\": \"{{username}}@example.com\",\n  \"nickname\": \"API Test\",\n  \"remark\": \"postman/apifox smoke test\"\n}"
+        },
+        "url": "{{baseUrl}}/v1/auth/register"
+      }
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const body = pm.response.json();",
+              "pm.test('login succeeds', function () {",
+              "  pm.expect(pm.response.code).to.eql(200);",
+              "  pm.expect(body.code).to.eql(0);",
+              "});",
+              "if (body.data && body.data.accessToken) {",
+              "  pm.collectionVariables.set('token', body.data.accessToken);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/v1/auth/login"
+      }
+    },
+    {
+      "name": "Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "token",
+            "value": "{{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/v1/member/users/profile"
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "token",
+            "value": "{{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": "{{baseUrl}}/v1/auth/logout"
+      }
+    }
+  ]
+}
