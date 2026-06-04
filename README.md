@@ -1,10 +1,10 @@
 # Go template
 
-Go 最小可运行后端模板，当前只保留 `api-gateway` + `member-service`，用于跑通登录、注册、退出和用户资料接口。
+Go 最小可运行后端模板，当前只保留 `gateway-service` + `member-service`，用于跑通登录、注册、退出和用户资料接口。
 
 ## 服务清单
 
-- `api-gateway` (`:8180`)：统一 HTTP 入口，负责 CORS、鉴权和转发到 member-service。
+- `gateway-service` (`:8180`)：统一 HTTP 入口，负责 CORS、鉴权和转发到 member-service。
 - `member-service` (`:8181`，gRPC `:9181`)：注册、登录、退出、token introspect、用户资料。
 
 ## 中间件
@@ -39,9 +39,11 @@ curl http://127.0.0.1:8180/healthz
 - `GET /v1/member/users/profile`
 - `PUT /v1/member/users/profile`
 
+完整约定见 [docs/api/README.md](docs/api/README.md)（认证、错误码、REST、gRPC、WebSocket）。
+
 ## 接口测试
 
-Postman/Apifox 可导入 `api/pricing-assistant.postman_collection.json`。
+Postman/Apifox 可导入 `api/postman_collection.json`。
 
 命令行冒烟测试：
 

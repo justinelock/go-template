@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	memberapp "pricing-assistant/internal/member/app"
-	"pricing-assistant/internal/member/domain"
-	"pricing-assistant/internal/platform/httpx"
+	memberapp "go-template/internal/member/app"
+	"go-template/internal/member/domain"
+	"go-template/internal/platform/httpx"
 )
 
 // Handler 承担 member-service 的 HTTP 入站适配职责：

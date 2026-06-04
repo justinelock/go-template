@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package member.v1;
 
-option go_package = "pricing-assistant/api/gen/member/v1;memberv1";
+option go_package = "go-template/api/gen/member/v1;memberv1";
 
 service AuthService {
   rpc Introspect (IntrospectRequest) returns (IntrospectResponse);

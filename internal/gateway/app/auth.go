@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	membergrpc "pricing-assistant/internal/gateway/client/membergrpc"
+	membergrpc "go-template/internal/gateway/client/membergrpc"
 )
 
 type Resolver func(serviceName string, fallback string) string

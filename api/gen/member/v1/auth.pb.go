@@ -156,7 +156,7 @@ const file_member_v1_auth_proto_rawDesc = "" +
 	"\btrace_id\x18\x04 \x01(\tR\atraceId2X\n" +
 	"\vAuthService\x12I\n" +
 	"\n" +
-	"Introspect\x12\x1c.member.v1.IntrospectRequest\x1a\x1d.member.v1.IntrospectResponseB.Z,pricing-assistant/api/gen/member/v1;memberv1b\x06proto3"
+	"Introspect\x12\x1c.member.v1.IntrospectRequest\x1a\x1d.member.v1.IntrospectResponseB.Z,go-template/api/gen/member/v1;memberv1b\x06proto3"
 
 var (
 	file_member_v1_auth_proto_rawDescOnce sync.Once

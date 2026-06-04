@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	memberv1 "pricing-assistant/api/gen/member/v1"
+	memberv1 "go-template/api/gen/member/v1"
 )
 
 type Client struct {

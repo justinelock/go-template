@@ -1,0 +1,13 @@
+---
+description: gRPC proto 与内部 RPC 约定
+globs: "api/proto/**,**/transport/grpc/**,api/gen/**"
+alwaysApply: false
+---
+
+# gRPC 规则
+
+- 仅服务间；对外能力走 HTTP gateway。
+- 改 `api/proto/**/*.proto` 后执行 `./scripts/gen-proto.sh`；勿手改 `api/gen/`。
+- 新增 RPC：实现于 `internal/{svc}/transport/grpc/`，文档更新 `docs/api/grpc.md`。
+- Introspect：token 空 → `InvalidArgument`；无效 → `Unauthenticated`。
+- 调用方设置超时与 HTTP 回退（参考 gateway `membergrpc` 800ms）。

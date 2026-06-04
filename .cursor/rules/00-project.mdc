@@ -1,0 +1,15 @@
+---
+description: Go 模板项目结构与 API 文档入口
+alwaysApply: true
+---
+
+# 项目总则
+
+- 模块：`go-template`。对外 HTTP 只走 **gateway-service** (`:8180`)，业务在 **member-service** (`:8181` / gRPC `:9181`)。
+- 分层：`cmd/` → `internal/{svc}/transport` → `app` → `repo`；平台能力在 `internal/platform/`。
+- **改 API 前必读**：`docs/api/README.md`；错误码登记 `docs/api/error-codes.md`。
+- gateway transport **禁止**业务逻辑（鉴权、CORS、代理除外）。
+- 配置：环境变量 > `configs/.env` > 配置文件；见 README。
+- 冒烟测试：`./scripts/smoke-auth-flow.sh`。
+- **步骤级注释**：新增/修改代码须写 `// 步骤 N：` 注释，越详细越好；见 `docs/conventions/code-comments.md`、规则 `code-comments.mdc`。
+- **变更日志**：每次改动须更新根目录 `CHANGELOG.md` 的 `[Unreleased]`；见规则 `changelog.mdc`。

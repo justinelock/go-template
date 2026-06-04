@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"go-template/internal/member/domain"
+
 	"github.com/go-redis/redis/v8"
-	"pricing-assistant/internal/member/domain"
 )
 
 type RedisTokenRepo struct {

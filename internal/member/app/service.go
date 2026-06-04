@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"pricing-assistant/internal/member/domain"
-	"pricing-assistant/internal/member/repo"
-	"pricing-assistant/internal/member/vo"
+	"go-template/internal/member/domain"
+	"go-template/internal/member/repo"
+	"go-template/internal/member/vo"
 )
 
 const AccessTokenTTL = 12 * time.Hour

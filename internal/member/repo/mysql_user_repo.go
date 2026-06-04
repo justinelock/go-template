@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"pricing-assistant/internal/member/domain"
+	"go-template/internal/member/domain"
 )
 
 type MySQLUserRepo struct {

@@ -1,5 +1,5 @@
 {
-  "api_gateway_port": "8180",
+  "gateway_service_port": "8180",
   "member_service_port": "8181",
   "member_service_grpc_port": "9181",
   "member_service_url": "http://member-service:8181",

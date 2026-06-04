@@ -11,7 +11,7 @@ import (
 )
 
 type AppConfig struct {
-	APIGatewayPort        string `json:"api_gateway_port"`
+	GatewayServicePort    string `json:"gateway_service_port"`
 	MemberServicePort     string `json:"member_service_port"`
 	MemberServiceGRPCPort string `json:"member_service_grpc_port"`
 
@@ -63,7 +63,7 @@ func resolveConfigPath() string {
 
 func defaultConfig() *AppConfig {
 	return &AppConfig{
-		APIGatewayPort:        "8180",
+		GatewayServicePort:    "8180",
 		MemberServicePort:     "8181",
 		MemberServiceGRPCPort: "9181",
 
@@ -148,8 +148,8 @@ func normalizeDotEnvValue(value string) string {
 }
 
 func merge(dst, src *AppConfig) {
-	if src.APIGatewayPort != "" {
-		dst.APIGatewayPort = src.APIGatewayPort
+	if src.GatewayServicePort != "" {
+		dst.GatewayServicePort = src.GatewayServicePort
 	}
 	if src.MemberServicePort != "" {
 		dst.MemberServicePort = src.MemberServicePort
@@ -196,7 +196,7 @@ func merge(dst, src *AppConfig) {
 }
 
 func overrideWithEnv(cfg *AppConfig) {
-	cfg.APIGatewayPort = getenv("API_GATEWAY_PORT", cfg.APIGatewayPort)
+	cfg.GatewayServicePort = getenv("GATEWAY_SERVICE_PORT", cfg.GatewayServicePort)
 	cfg.MemberServicePort = getenv("MEMBER_SERVICE_PORT", cfg.MemberServicePort)
 	cfg.MemberServiceGRPCPort = getenv("MEMBER_SERVICE_GRPC_PORT", cfg.MemberServiceGRPCPort)
 

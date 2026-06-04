@@ -3,7 +3,7 @@ package repo
 import (
 	"context"
 
-	"pricing-assistant/internal/member/domain"
+	"go-template/internal/member/domain"
 )
 
 // UserRepository 定义 member 域用户与签到数据访问能力：

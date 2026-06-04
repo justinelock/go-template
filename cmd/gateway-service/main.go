@@ -6,14 +6,15 @@ import (
 	"net/http"
 	"time"
 
+	memberv1 "go-template/api/gen/member/v1"
+	gatewayapp "go-template/internal/gateway/app"
+	membergrpc "go-template/internal/gateway/client/membergrpc"
+	httptransport "go-template/internal/gateway/transport/http"
+	"go-template/internal/platform/config"
+	"go-template/internal/platform/discovery"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	memberv1 "pricing-assistant/api/gen/member/v1"
-	gatewayapp "pricing-assistant/internal/gateway/app"
-	membergrpc "pricing-assistant/internal/gateway/client/membergrpc"
-	httptransport "pricing-assistant/internal/gateway/transport/http"
-	"pricing-assistant/internal/platform/config"
-	"pricing-assistant/internal/platform/discovery"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("load config failed: %v", err)
 	}
-	port := cfg.APIGatewayPort
+	port := cfg.GatewayServicePort
 
 	var consulClient *discovery.Consul
 	if cfg.ConsulEnabled {
@@ -29,8 +30,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("init consul failed: %v", err)
 		}
-		serviceID := fmt.Sprintf("api-gateway-%d", time.Now().UnixNano())
-		if err := consulClient.Register(serviceID, "api-gateway", cfg.ServiceHost, port, "/healthz"); err != nil {
+		serviceID := fmt.Sprintf("gateway-service-%d", time.Now().UnixNano())
+		if err := consulClient.Register(serviceID, "gateway-service", cfg.ServiceHost, port, "/healthz"); err != nil {
 			log.Fatalf("consul register failed: %v", err)
 		}
 		defer func() { _ = consulClient.Deregister(serviceID) }()
@@ -72,6 +73,6 @@ func main() {
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
 
-	log.Printf("api-gateway http listening on :%s", port)
+	log.Printf("gateway-service http listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, handler.BuildServer(mux)))
 }

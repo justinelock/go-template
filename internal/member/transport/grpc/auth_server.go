@@ -5,11 +5,12 @@ import (
 	"errors"
 	"strings"
 
+	memberv1 "go-template/api/gen/member/v1"
+	memberapp "go-template/internal/member/app"
+	"go-template/internal/member/domain"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	memberv1 "pricing-assistant/api/gen/member/v1"
-	memberapp "pricing-assistant/internal/member/app"
-	"pricing-assistant/internal/member/domain"
 )
 
 type AuthServer struct {

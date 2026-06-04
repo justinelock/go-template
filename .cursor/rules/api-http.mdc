@@ -1,0 +1,16 @@
+---
+description: HTTP REST 信封、路径与网关代理约定
+globs: "**/transport/http/**,internal/platform/httpx/**"
+alwaysApply: false
+---
+
+# HTTP API 规则
+
+- 响应信封：`{ code, message, data?, trace_id }`，用 `httpx.JSON`；成功 `code: 0`。
+- HTTP status 与业务 `code` 分离（如 400 + 40001）。
+- Trace：`X-Trace-Id` 透传或生成，响应头回写。
+- 路径前缀 `/v1/`；网关对外 `/v1/member/...` 可映射 member 内部路径。
+- Token：`Bearer` > header `token` > query `token`。
+- 网关代理成功：**原样透传**下游 body；仅网关错误用信封。
+- JSON 对外 camelCase；兼容字段需文档说明。
+- 详情：`docs/api/rest-conventions.md`、`docs/api/auth.md`。

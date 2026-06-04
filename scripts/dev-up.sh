@@ -33,7 +33,7 @@ env_value() {
   echo "${value:-${fallback}}"
 }
 
-API_GATEWAY_PORT="$(env_value API_GATEWAY_PORT 8180)"
+GATEWAY_SERVICE_PORT="$(env_value GATEWAY_SERVICE_PORT 8180)"
 MEMBER_SERVICE_PORT="$(env_value MEMBER_SERVICE_PORT 8181)"
 MEMBER_SERVICE_GRPC_PORT="$(env_value MEMBER_SERVICE_GRPC_PORT 9181)"
 
@@ -59,23 +59,23 @@ stop_port() {
 mkdir -p ./bin ./logs
 
 echo "[build] compile gateway + member"
-go build -o ./bin/api-gateway ./cmd/api-gateway
+go build -o ./bin/gateway-service ./cmd/gateway-service
 go build -o ./bin/member-service ./cmd/member-service
 
 echo "[ports] ensure service ports are free"
-stop_port "${API_GATEWAY_PORT}"
+stop_port "${GATEWAY_SERVICE_PORT}"
 stop_port "${MEMBER_SERVICE_PORT}"
 stop_port "${MEMBER_SERVICE_GRPC_PORT}"
 
-echo "[1/2] start api-gateway :${API_GATEWAY_PORT}"
-./bin/api-gateway > ./logs/api-gateway.log 2>&1 &
+echo "[1/2] start gateway-service :${GATEWAY_SERVICE_PORT}"
+./bin/gateway-service > ./logs/gateway-service.log 2>&1 &
 
 echo "[2/2] start member-service :${MEMBER_SERVICE_PORT} grpc :${MEMBER_SERVICE_GRPC_PORT}"
 ./bin/member-service > ./logs/member-service.log 2>&1 &
 
 echo ""
 echo "gateway + member started."
-echo "gateway: http://127.0.0.1:${API_GATEWAY_PORT}/healthz"
+echo "gateway: http://127.0.0.1:${GATEWAY_SERVICE_PORT}/healthz"
 echo "logs:"
 echo "  ./logs/member-service.log"
-echo "  ./logs/api-gateway.log"
+echo "  ./logs/gateway-service.log"

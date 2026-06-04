@@ -7,15 +7,16 @@ import (
 	"net/http"
 	"time"
 
+	memberv1 "go-template/api/gen/member/v1"
+	memberapp "go-template/internal/member/app"
+	"go-template/internal/member/repo"
+	grpctransport "go-template/internal/member/transport/grpc"
+	httptransport "go-template/internal/member/transport/http"
+	"go-template/internal/platform/config"
+	"go-template/internal/platform/discovery"
+	"go-template/internal/platform/store"
+
 	"google.golang.org/grpc"
-	memberv1 "pricing-assistant/api/gen/member/v1"
-	memberapp "pricing-assistant/internal/member/app"
-	"pricing-assistant/internal/member/repo"
-	grpctransport "pricing-assistant/internal/member/transport/grpc"
-	httptransport "pricing-assistant/internal/member/transport/http"
-	"pricing-assistant/internal/platform/config"
-	"pricing-assistant/internal/platform/discovery"
-	"pricing-assistant/internal/platform/store"
 )
 
 func main() {

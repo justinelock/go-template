@@ -1,0 +1,40 @@
+---
+description: 每次代码或配置变更必须更新 CHANGELOG.md
+alwaysApply: true
+---
+
+# 变更日志
+
+**每次**提交代码、配置、文档规范、Cursor 规则等仓库变更，须同步更新根目录 [`CHANGELOG.md`](../../CHANGELOG.md)。
+
+## 写在哪里
+
+- 进行中的改动 → **`## [Unreleased]`** 对应小节（Added / Changed / Fixed / Removed / Docs / Chore）。
+- 发布或合并里程碑 → 将 Unreleased 下沉为 `## [YYYY-MM-DD]` 或 `## [x.y.z] - YYYY-MM-DD`，并新建空 Unreleased。
+
+## 每条记录格式
+
+```markdown
+- **范围**（如 gateway、member、docs/api）：一句话说明「做了什么」；必要时补充「为什么」或关联路径。
+```
+
+示例：
+
+```markdown
+### Added
+- **gateway-service**：注册 `/v1/ws` 占位路由，返回 501 + `50101`（见 `docs/api/websocket.md`）。
+```
+
+## 必须记录的内容
+
+- 新接口、路由、错误码、配置项、破坏性变更
+- 模块名、目录重命名、依赖升级
+- 文档 / 规则 / Skill 的新增与重要修订
+
+## 可省略
+
+- 纯 typo、无行为变化的格式化（除非用户明确要求记录）
+
+## 自检
+
+PR / 任务完成前：打开 `CHANGELOG.md`，确认 Unreleased 已包含**本次全部**对外可见变更。

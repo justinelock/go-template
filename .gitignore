@@ -38,5 +38,4 @@ tmp/
 logs/
 dump.rdb
 *.rdb
-docs/
 .gocache

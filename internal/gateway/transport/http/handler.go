@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	gatewayapp "pricing-assistant/internal/gateway/app"
-	"pricing-assistant/internal/gateway/vo"
-	"pricing-assistant/internal/platform/httpx"
+	gatewayapp "go-template/internal/gateway/app"
+	"go-template/internal/gateway/vo"
+	"go-template/internal/platform/httpx"
 )
 
 // Handler 负责 API Gateway 的 HTTP 入站处理：
@@ -67,6 +67,17 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	// 步骤 3：member 域用户接口（新前缀 -> member 内部路径）。
 	mux.HandleFunc("/v1/member/users/profile", h.proxyToMember("/v1/users/profile"))
+
+	// 步骤 4：WebSocket 占位（规范见 docs/api/websocket.md）。
+	mux.HandleFunc("/v1/ws", h.websocketPlaceholder)
+}
+
+// websocketPlaceholder WebSocket 未实现时返回 501 与业务码 50101。
+func (h *Handler) websocketPlaceholder(w http.ResponseWriter, r *http.Request) {
+	// 步骤 1：生成/透传 traceID，与 REST 接口保持一致。
+	traceID := httpx.EnsureTraceID(r)
+	// 步骤 2：返回 501 与业务码 50101，告知客户端能力尚未开放（见 docs/api/websocket.md）。
+	httpx.JSON(w, http.StatusNotImplemented, traceID, 50101, "websocket not implemented", nil)
 }
 
 // healthz 返回网关健康状态。
@@ -75,7 +86,7 @@ func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
 	traceID := httpx.EnsureTraceID(r)
 
 	// 步骤 2：输出统一响应结构。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", vo.HealthResp{Service: "api-gateway"})
+	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", vo.HealthResp{Service: "gateway-service"})
 }
 
 // publicConfig 返回前端启动所需的公开配置。
