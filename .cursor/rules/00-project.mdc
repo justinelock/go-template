@@ -11,6 +11,6 @@ alwaysApply: true
 - gateway transport **禁止**业务逻辑（鉴权、CORS、代理除外）。
 - 配置：环境变量 > `configs/.env` > 配置文件；见 README。
 - 冒烟测试：`./scripts/smoke-auth-flow.sh`。
-- CI：PR 合并前确保 `.github/workflows/ci.yml` 绿色通过。
+- CI：默认**手动**触发（Actions → CI → Run workflow）；合并前本地 `make test && make smoke`。
 - **步骤级注释**：新增/修改代码须写 `// 步骤 N：` 注释，越详细越好；见 `docs/conventions/code-comments.md`、规则 `code-comments.mdc`。
 - **变更日志**：每次改动须更新根目录 `CHANGELOG.md` 的 `[Unreleased]`；见规则 `changelog.mdc`。

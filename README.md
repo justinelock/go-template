@@ -102,11 +102,11 @@ make smoke
 BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
 ```
 
-合并前自检：`make test && make smoke`
+合并前自检：`make test && make smoke`（GitHub CI 默认关闭自动运行，需 Actions 页手动 Run workflow）
 
 ## 路线图
 
 | 版本 | 内容 |
 |------|------|
 | **v0.2** | 架构文档、docker-compose、errcode、网关路由表、单元测试 |
-| **v0.3**（进行中） | order-service Demo、RabbitMQ、OpenAPI、结构化日志（GitHub Actions CI 已接入） |
+| **v0.3**（进行中） | order-service Demo、RabbitMQ、OpenAPI、结构化日志（GitHub Actions CI，默认手动触发） |

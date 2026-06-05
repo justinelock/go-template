@@ -8,6 +8,8 @@
 
 ### Changed
 
+- **GitHub Actions CI**：改为默认仅 `workflow_dispatch` 手动触发，不再 push/PR 自动运行；增强 compose 健康等待与 smoke 脚本权限。
+- **Dockerfile**：构建镜像 `golang:1.25` → `1.26`，与 `go.mod` 一致（修复 compose 构建失败）。
 - **步骤级注释**：为 order-service、platform（redislock/idempotency/mq）、网关 order 路由及 smoke 脚本补充步骤注释，对齐 `docs/conventions/code-comments.md`。
 - **internal/platform/mq**：重构为统一 `Bus` 接口；`MQ_PROVIDER` 配置切换（默认 rabbitmq）；order-service 经 `order/mq.SettlePublisher` 适配，业务不依赖具体 MQ。
 
@@ -21,7 +23,7 @@
 - **docs/architecture/order-demo.md**：订单 Demo 流程与 curl 示例。
 - **scripts/smoke-order-flow.sh**：下单幂等与结算轮询冒烟。
 - **docker-compose**：新增 `rabbitmq`、`order-service` 服务。
-- **GitHub Actions CI**：新增 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，包含 `test-and-build` 与 `compose-smoke` 两个 job。
+- **GitHub Actions CI**：新增 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，包含 `test-and-build` 与 `compose-smoke` 两个 job（默认手动触发）。
 
 ### Removed
 

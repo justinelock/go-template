@@ -61,4 +61,4 @@ make test
 make smoke
 ```
 
-GitHub Actions 已自动执行 `go test`、`go build` 与 compose 冒烟检查，合并前仍建议本地先跑一次 `make test && make smoke`。
+GitHub Actions **默认不自动运行**（避免每次 push 触发）；需在仓库 **Actions → CI → Run workflow** 手动执行。合并前建议本地先跑 `make test && make smoke`。若需 push/PR 自动 CI，见 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) 顶部注释。
