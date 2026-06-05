@@ -10,14 +10,15 @@ description: >-
 
 ## 1. 读规范
 
+- [docs/architecture/add-service.md](../../../docs/architecture/add-service.md)（新服务）
 - [docs/api/README.md](../../../docs/api/README.md)
 - 相关专题：REST / auth / error-codes / grpc / websocket
 
 ## 2. 设计
 
 - 对外路径是否经 **gateway** `/v1/...`？
-- 是否需要网关鉴权？更新 `internal/gateway/app/auth.go` 的 `RequiresAuth`。
-- 网关路径与 member 内部路径映射是否在 `gateway/transport/http/handler.go` 注册？
+- 新服务是否按 architecture playbook 复制骨架？
+- 网关：在 `internal/gateway/routes/routes.go` 增加 `ProxyRoute`（`RequiresAuth` 字段）
 
 ## 3. 实现
 
@@ -54,11 +55,12 @@ gRPC：改 `api/proto/` → `./scripts/gen-proto.sh` → `transport/grpc/`。
 ## 8. 验证
 
 ```bash
-go build ./...
-./scripts/smoke-auth-flow.sh
+make build
+make test
+make smoke
 ```
 
-服务未启动时先：`./scripts/dev-up.sh`
+服务未启动时先：`make dev` 或 `make compose-up`
 
 ## 禁止
 

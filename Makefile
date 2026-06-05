@@ -1,8 +1,29 @@
 SHELL := /bin/bash
 
-.PHONY: proto proto-generate
+.PHONY: build dev compose-up compose-down proto test smoke tidy
 
-proto: proto-generate
+build:
+	@mkdir -p bin logs
+	go build -o ./bin/gateway-service ./cmd/gateway-service
+	go build -o ./bin/member-service ./cmd/member-service
 
-proto-generate:
+dev:
+	@bash scripts/dev-up.sh
+
+compose-up:
+	docker compose up -d --build
+
+compose-down:
+	docker compose down
+
+proto:
 	@bash scripts/gen-proto.sh
+
+test:
+	go test ./...
+
+smoke:
+	@bash scripts/smoke-auth-flow.sh
+
+tidy:
+	go mod tidy

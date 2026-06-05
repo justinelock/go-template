@@ -4,11 +4,12 @@
 
 ## 必读
 
-1. API 规范索引：[`docs/api/README.md`](docs/api/README.md)
-2. Cursor 规则：`.cursor/rules/`（HTTP / 错误码 / gRPC / **步骤注释** / **变更日志**）
-3. 通用变更流程：`.cursor/skills/code-change/SKILL.md`；接口变更：`.cursor/skills/api-change/SKILL.md`
-4. 变更日志：[`CHANGELOG.md`](CHANGELOG.md)（**每次任务结束必须更新** `[Unreleased]`）
-5. 注释约定：[`docs/conventions/code-comments.md`](docs/conventions/code-comments.md)
+1. 架构与加服务：[`docs/architecture/README.md`](docs/architecture/README.md)、[`docs/architecture/add-service.md`](docs/architecture/add-service.md)
+2. API 规范索引：[`docs/api/README.md`](docs/api/README.md)
+3. Cursor 规则：`.cursor/rules/`（HTTP / 错误码 / gRPC / **步骤注释** / **变更日志**）
+4. 通用变更流程：`.cursor/skills/code-change/SKILL.md`；接口变更：`.cursor/skills/api-change/SKILL.md`
+5. 变更日志：[`CHANGELOG.md`](CHANGELOG.md)（**每次任务结束必须更新** `[Unreleased]`）
+6. 注释约定：[`docs/conventions/code-comments.md`](docs/conventions/code-comments.md)
 
 ## 结构
 
@@ -34,7 +35,8 @@
 ## 验证
 
 ```bash
-./scripts/smoke-auth-flow.sh
+make test
+make smoke
 ```
 
 Postman 集合：`api/postman_collection.json`

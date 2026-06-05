@@ -6,7 +6,7 @@ alwaysApply: false
 
 # 错误码规则
 
-- 先更新 `docs/api/error-codes.md`，再在 handler 使用；禁止复用已占用码。
+- 先更新 `docs/api/error-codes.md` 与 `internal/platform/errcode/codes.go`，再在 handler 使用；禁止复用已占用码。
 - 段：`0` 成功；`405` 方法；`40xxx` 客户端；`401xx` 认证；`404xx` 缺失；`500xx` 服务端；`501xx` 未实现。
 - member：领域错误用 `errors.Is(domain.Err*)` 映射，勿在 app 写 HTTP 码。
 - gateway `50001`/`50002` 为代理专用；member `50001` 为登录失败——勿混用新码。

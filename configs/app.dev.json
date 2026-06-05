@@ -1,0 +1,17 @@
+{
+  "gateway_service_port": "8180",
+  "member_service_port": "8181",
+  "member_service_grpc_port": "9181",
+  "member_service_url": "http://member-service:8181",
+  "member_service_grpc_addr": "member-service:9181",
+  "gateway_use_member_grpc": false,
+  "mysql_dsn": "root:Root123456@tcp(mysql:3306)/go_template_db?charset=utf8mb4&parseTime=true&loc=Local",
+  "redis_addr": "redis:6379",
+  "redis_password": "redis1234",
+  "redis_db": 0,
+  "consul_enabled": false,
+  "consul_address": "consul:8500",
+  "consul_datacenter": "dc1",
+  "service_host": "member-service",
+  "cors_allow_origin": "http://localhost:5173"
+}

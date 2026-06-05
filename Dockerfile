@@ -13,6 +13,7 @@ FROM alpine:3.20
 WORKDIR /srv
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /out /srv/bin
+COPY configs /srv/configs
 
 # default command can be overridden by docker compose
 CMD ["/srv/bin/gateway-service"]

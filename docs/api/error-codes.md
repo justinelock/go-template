@@ -20,7 +20,7 @@
 2. 在 handler 中使用，**禁止复用**已占用码值。
 3. 若多服务共用码段，在表中注明 `gateway-service` / `member`。
 
-后续可抽到 `internal/platform/errcode` 集中常量（单独 PR）。
+代码常量：[`internal/platform/errcode/codes.go`](../../internal/platform/errcode/codes.go)。新增码须先改文档再改该文件。
 
 ## 完整对照表（当前实现）
 

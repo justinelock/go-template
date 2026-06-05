@@ -8,6 +8,7 @@ import (
 
 	memberapp "go-template/internal/member/app"
 	"go-template/internal/member/domain"
+	"go-template/internal/platform/errcode"
 	"go-template/internal/platform/httpx"
 )
 
@@ -77,7 +78,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：生成 traceID 并输出统一响应。
 	traceID := httpx.EnsureTraceID(r)
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", map[string]string{"service": "member-service"})
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, map[string]string{"service": "member-service"})
 }
 
 // login 处理登录请求。
@@ -85,18 +86,18 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：校验请求方法。
 	traceID := httpx.EnsureTraceID(r)
 	if r.Method != http.MethodPost {
-		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, 405, "method not allowed", nil)
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
 		return
 	}
 
 	// 步骤 2：解析并校验请求体。
 	var req loginReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.JSON(w, http.StatusBadRequest, traceID, 40001, "invalid request body", nil)
+		httpx.JSON(w, http.StatusBadRequest, traceID, errcode.BadRequestBody, errcode.MsgInvalidRequestBody, nil)
 		return
 	}
 	if strings.TrimSpace(req.Username) == "" && strings.TrimSpace(req.Mobile) == "" || req.Password == "" {
-		httpx.JSON(w, http.StatusBadRequest, traceID, 40002, "username/password is required", nil)
+		httpx.JSON(w, http.StatusBadRequest, traceID, errcode.LoginFieldsRequired, errcode.MsgUsernamePasswordRequired, nil)
 		return
 	}
 
@@ -110,15 +111,15 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// 步骤 4：按领域错误映射 HTTP 错误码。
 		if errors.Is(err, domain.ErrInvalidCredentials) {
-			httpx.JSON(w, http.StatusUnauthorized, traceID, 40103, "username or password is invalid", nil)
+			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.InvalidCredentials, errcode.MsgInvalidCredentials, nil)
 			return
 		}
-		httpx.JSON(w, http.StatusInternalServerError, traceID, 50001, "login failed", nil)
+		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.LoginFailed, errcode.MsgLoginFailed, nil)
 		return
 	}
 
 	// 步骤 5：返回登录成功响应。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", data)
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, data)
 }
 
 // register 处理用户注册请求。
@@ -126,18 +127,18 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：校验请求方法。
 	traceID := httpx.EnsureTraceID(r)
 	if r.Method != http.MethodPost {
-		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, 405, "method not allowed", nil)
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
 		return
 	}
 
 	// 步骤 2：解析请求体并校验必填。
 	var req registerReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		httpx.JSON(w, http.StatusBadRequest, traceID, 40011, "invalid request body", nil)
+		httpx.JSON(w, http.StatusBadRequest, traceID, errcode.RegisterBadRequestBody, errcode.MsgInvalidRequestBody, nil)
 		return
 	}
 	if strings.TrimSpace(req.Username) == "" || strings.TrimSpace(req.Password) == "" || strings.TrimSpace(req.Mobile) == "" {
-		httpx.JSON(w, http.StatusBadRequest, traceID, 40012, "username/password/mobile is required", nil)
+		httpx.JSON(w, http.StatusBadRequest, traceID, errcode.RegisterFieldsRequired, errcode.MsgRegisterFieldsRequired, nil)
 		return
 	}
 
@@ -156,23 +157,23 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// 步骤 4：按领域错误映射客户端可读错误。
 		if errors.Is(err, domain.ErrUsernameExists) {
-			httpx.JSON(w, http.StatusBadRequest, traceID, 40013, "username already exists", nil)
+			httpx.JSON(w, http.StatusBadRequest, traceID, errcode.UsernameExists, errcode.MsgUsernameExists, nil)
 			return
 		}
 		if errors.Is(err, domain.ErrMobileExists) {
-			httpx.JSON(w, http.StatusBadRequest, traceID, 40016, "mobile already exists", nil)
+			httpx.JSON(w, http.StatusBadRequest, traceID, errcode.MobileExists, errcode.MsgMobileExists, nil)
 			return
 		}
 		if errors.Is(err, domain.ErrInvalidCredentials) {
-			httpx.JSON(w, http.StatusBadRequest, traceID, 40012, "username/password/mobile is required", nil)
+			httpx.JSON(w, http.StatusBadRequest, traceID, errcode.RegisterFieldsRequired, errcode.MsgRegisterFieldsRequired, nil)
 			return
 		}
-		httpx.JSON(w, http.StatusInternalServerError, traceID, 50008, "register failed", nil)
+		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.RegisterFailed, errcode.MsgRegisterFailed, nil)
 		return
 	}
 
 	// 步骤 5：返回新建用户资料。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", data)
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, data)
 }
 
 // logout 处理用户登出。
@@ -180,23 +181,23 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：校验请求方法与 token 存在性。
 	traceID := httpx.EnsureTraceID(r)
 	if r.Method != http.MethodPost {
-		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, 405, "method not allowed", nil)
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
 		return
 	}
 	token := extractToken(r)
 	if token == "" {
-		httpx.JSON(w, http.StatusUnauthorized, traceID, 40101, "token is required", nil)
+		httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenRequired, errcode.MsgTokenRequired, nil)
 		return
 	}
 
 	// 步骤 2：调用 app 层执行 token 失效。
 	if err := h.svc.Logout(r.Context(), token); err != nil {
-		httpx.JSON(w, http.StatusInternalServerError, traceID, 50006, "logout failed", nil)
+		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.LogoutFailed, errcode.MsgLogoutFailed, nil)
 		return
 	}
 
 	// 步骤 3：返回登出成功响应（驼峰主字段 + 兼容旧字段）。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", map[string]any{
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, map[string]any{
 		"loggedOut":  true,
 		"logged_out": true,
 	})
@@ -207,12 +208,12 @@ func (h *Handler) introspect(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：校验方法与 token 参数。
 	traceID := httpx.EnsureTraceID(r)
 	if r.Method != http.MethodGet {
-		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, 405, "method not allowed", nil)
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
 		return
 	}
 	token := extractToken(r)
 	if token == "" {
-		httpx.JSON(w, http.StatusUnauthorized, traceID, 40101, "token is required", nil)
+		httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenRequired, errcode.MsgTokenRequired, nil)
 		return
 	}
 
@@ -221,15 +222,15 @@ func (h *Handler) introspect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// 步骤 3：映射 token 无效与内部异常。
 		if errors.Is(err, domain.ErrTokenInvalid) {
-			httpx.JSON(w, http.StatusUnauthorized, traceID, 40102, "token is invalid or expired", nil)
+			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenInvalid, errcode.MsgTokenInvalid, nil)
 			return
 		}
-		httpx.JSON(w, http.StatusInternalServerError, traceID, 50007, "token verify failed", nil)
+		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.TokenVerifyFailed, errcode.MsgTokenVerifyFailed, nil)
 		return
 	}
 
 	// 步骤 4：返回反查结果。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", introspectResp{
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, introspectResp{
 		UserID:       userID,
 		UserIDLegacy: userID,
 	})
@@ -241,7 +242,7 @@ func (h *Handler) profile(w http.ResponseWriter, r *http.Request) {
 	traceID := httpx.EnsureTraceID(r)
 	userID, err := h.svc.ResolveUserID(r.Context(), r.Header.Get("X-User-Id"), extractToken(r))
 	if err != nil {
-		httpx.JSON(w, http.StatusUnauthorized, traceID, 40102, "token is invalid or expired", nil)
+		httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenInvalid, errcode.MsgTokenInvalid, nil)
 		return
 	}
 
@@ -252,22 +253,22 @@ func (h *Handler) profile(w http.ResponseWriter, r *http.Request) {
 		data, err := h.svc.GetUserProfile(r.Context(), userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrUserNotFound) {
-				httpx.JSON(w, http.StatusNotFound, traceID, 40402, "user not found", nil)
+				httpx.JSON(w, http.StatusNotFound, traceID, errcode.UserNotFound, errcode.MsgUserNotFound, nil)
 				return
 			}
-			httpx.JSON(w, http.StatusInternalServerError, traceID, 50009, "query user failed", nil)
+			httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.QueryUserFailed, errcode.MsgQueryUserFailed, nil)
 			return
 		}
-		httpx.JSON(w, http.StatusOK, traceID, 0, "ok", data)
+		httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, data)
 	case http.MethodPut:
 		// 步骤 2.2：解析并校验更新请求。
 		var req updateMeReq
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			httpx.JSON(w, http.StatusBadRequest, traceID, 40014, "invalid request body", nil)
+			httpx.JSON(w, http.StatusBadRequest, traceID, errcode.ProfileBadRequestBody, errcode.MsgInvalidRequestBody, nil)
 			return
 		}
 		if strings.TrimSpace(req.Email) == "" && strings.TrimSpace(req.Mobile) == "" && strings.TrimSpace(req.Nickname) == "" && strings.TrimSpace(req.Avatar) == "" && strings.TrimSpace(req.Remark) == "" {
-			httpx.JSON(w, http.StatusBadRequest, traceID, 40015, "at least one field is required", nil)
+			httpx.JSON(w, http.StatusBadRequest, traceID, errcode.ProfileNoField, errcode.MsgProfileFieldRequired, nil)
 			return
 		}
 
@@ -280,13 +281,13 @@ func (h *Handler) profile(w http.ResponseWriter, r *http.Request) {
 			Remark:   req.Remark,
 		})
 		if err != nil {
-			httpx.JSON(w, http.StatusInternalServerError, traceID, 50010, "update profile failed", nil)
+			httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.UpdateProfileFailed, errcode.MsgUpdateProfileFailed, nil)
 			return
 		}
-		httpx.JSON(w, http.StatusOK, traceID, 0, "ok", data)
+		httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, data)
 	default:
 		// 步骤 2.4：其他方法统一返回 405。
-		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, 405, "method not allowed", nil)
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
 	}
 }
 

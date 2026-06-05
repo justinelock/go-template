@@ -7,7 +7,7 @@ alwaysApply: true
 
 - 模块：`go-template`。对外 HTTP 只走 **gateway-service** (`:8180`)，业务在 **member-service** (`:8181` / gRPC `:9181`)。
 - 分层：`cmd/` → `internal/{svc}/transport` → `app` → `repo`；平台能力在 `internal/platform/`。
-- **改 API 前必读**：`docs/api/README.md`；错误码登记 `docs/api/error-codes.md`。
+- **改 API / 加服务前必读**：`docs/architecture/add-service.md`、`docs/api/README.md`；错误码登记 `docs/api/error-codes.md` 与 `internal/platform/errcode/codes.go`。
 - gateway transport **禁止**业务逻辑（鉴权、CORS、代理除外）。
 - 配置：环境变量 > `configs/.env` > 配置文件；见 README。
 - 冒烟测试：`./scripts/smoke-auth-flow.sh`。

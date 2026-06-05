@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	gatewayapp "go-template/internal/gateway/app"
+	"go-template/internal/gateway/routes"
 	"go-template/internal/gateway/vo"
+	"go-template/internal/platform/errcode"
 	"go-template/internal/platform/httpx"
 )
 
@@ -60,15 +62,12 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/healthz", h.healthz)
 	mux.HandleFunc("/v1/public/config", h.publicConfig)
 
-	// 步骤 2：认证相关接口（转发 member-service）。
-	mux.HandleFunc("/v1/auth/login", h.proxyToMember("/v1/auth/login"))
-	mux.HandleFunc("/v1/auth/register", h.proxyToMember("/v1/auth/register"))
-	mux.HandleFunc("/v1/auth/logout", h.proxyToMember("/v1/auth/logout"))
+	// 步骤 2：按声明式路由表注册反向代理（见 internal/gateway/routes/routes.go）。
+	for _, route := range routes.ProxyRoutes {
+		mux.HandleFunc(route.PublicPath, h.proxyToService(route))
+	}
 
-	// 步骤 3：member 域用户接口（新前缀 -> member 内部路径）。
-	mux.HandleFunc("/v1/member/users/profile", h.proxyToMember("/v1/users/profile"))
-
-	// 步骤 4：WebSocket 占位（规范见 docs/api/websocket.md）。
+	// 步骤 3：WebSocket 占位（规范见 docs/api/websocket.md）。
 	mux.HandleFunc("/v1/ws", h.websocketPlaceholder)
 }
 
@@ -77,7 +76,7 @@ func (h *Handler) websocketPlaceholder(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：生成/透传 traceID，与 REST 接口保持一致。
 	traceID := httpx.EnsureTraceID(r)
 	// 步骤 2：返回 501 与业务码 50101，告知客户端能力尚未开放（见 docs/api/websocket.md）。
-	httpx.JSON(w, http.StatusNotImplemented, traceID, 50101, "websocket not implemented", nil)
+	httpx.JSON(w, http.StatusNotImplemented, traceID, errcode.WebSocketNotImplemented, errcode.MsgWebSocketNotImplemented, nil)
 }
 
 // healthz 返回网关健康状态。
@@ -86,29 +85,40 @@ func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
 	traceID := httpx.EnsureTraceID(r)
 
 	// 步骤 2：输出统一响应结构。
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", vo.HealthResp{Service: "gateway-service"})
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, vo.HealthResp{Service: "gateway-service"})
 }
 
 // publicConfig 返回前端启动所需的公开配置。
 func (h *Handler) publicConfig(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：准备 traceID 并返回静态配置。
 	traceID := httpx.EnsureTraceID(r)
-	httpx.JSON(w, http.StatusOK, traceID, 0, "ok", vo.PublicConfigResp{
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, vo.PublicConfigResp{
 		Env: "local",
 	})
 }
 
-// proxyToMember 构造固定路径代理（member-service）。
-func (h *Handler) proxyToMember(path string) http.HandlerFunc {
+// proxyToService 按路由表构造下游代理 handler。
+func (h *Handler) proxyToService(route routes.ProxyRoute) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 步骤 1：解析目标地址。
-		target := h.resolve("member-service", h.memberURL) + path
+		// 步骤 1：按服务名解析回退基址与下游完整 URL。
+		fallback := h.serviceFallbackURL(route.ServiceName)
+		target := h.resolve(route.ServiceName, fallback) + route.UpstreamPath
 
 		// 步骤 2：透传 query 参数，避免筛选条件丢失。
 		target = appendRawQuery(target, r)
 
 		// 步骤 3：执行统一代理。
 		h.proxy(w, r, target)
+	}
+}
+
+// serviceFallbackURL 返回服务发现失败时的静态回退基址。
+func (h *Handler) serviceFallbackURL(serviceName string) string {
+	switch serviceName {
+	case "member-service":
+		return h.memberURL
+	default:
+		return ""
 	}
 }
 
@@ -136,7 +146,7 @@ func (h *Handler) proxy(w http.ResponseWriter, r *http.Request, target string) {
 	// 步骤 2：基于原请求方法构造下游请求。
 	req, err := http.NewRequest(r.Method, target, bytes.NewReader(body))
 	if err != nil {
-		httpx.JSON(w, http.StatusBadGateway, traceID, 50001, "proxy build request failed", nil)
+		httpx.JSON(w, http.StatusBadGateway, traceID, errcode.ProxyBuildFailed, errcode.MsgProxyBuildFailed, nil)
 		return
 	}
 
@@ -146,7 +156,7 @@ func (h *Handler) proxy(w http.ResponseWriter, r *http.Request, target string) {
 	// 步骤 4：调用下游服务。
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		httpx.JSON(w, http.StatusBadGateway, traceID, 50002, "downstream service unavailable", nil)
+		httpx.JSON(w, http.StatusBadGateway, traceID, errcode.DownstreamUnavailable, errcode.MsgDownstreamUnavailable, nil)
 		return
 	}
 	defer resp.Body.Close()
@@ -187,14 +197,14 @@ func (h *Handler) withAuth(next http.Handler) http.Handler {
 		traceID := httpx.EnsureTraceID(r)
 		token := gatewayapp.ExtractToken(r)
 		if token == "" {
-			httpx.JSON(w, http.StatusUnauthorized, traceID, 40101, "token is required", nil)
+			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenRequired, errcode.MsgTokenRequired, nil)
 			return
 		}
 
 		// 步骤 3：调用鉴权器校验 token 并获取 userID。
 		userID, err := h.authenticator.Introspect(r.Context(), token, traceID)
 		if err != nil {
-			httpx.JSON(w, http.StatusUnauthorized, traceID, 40102, "token is invalid or expired", nil)
+			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenInvalid, errcode.MsgTokenInvalid, nil)
 			return
 		}
 

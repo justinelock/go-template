@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: Root123456
+      MYSQL_DATABASE: go_template_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db/go_template_db.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pRoot123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass redis1234
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis1234", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  member-service:
+    build: .
+    command: ["/srv/bin/member-service"]
+    environment:
+      APP_ENV: dev
+      CONFIG_FILE: configs/app.dev.json
+    ports:
+      - "8181:8181"
+      - "9181:9181"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  gateway-service:
+    build: .
+    command: ["/srv/bin/gateway-service"]
+    environment:
+      APP_ENV: dev
+      CONFIG_FILE: configs/app.dev.json
+    ports:
+      - "8180:8180"
+    depends_on:
+      - member-service

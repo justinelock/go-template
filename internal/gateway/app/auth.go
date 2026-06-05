@@ -9,6 +9,7 @@ import (
 	"time"
 
 	membergrpc "go-template/internal/gateway/client/membergrpc"
+	"go-template/internal/gateway/routes"
 )
 
 type Resolver func(serviceName string, fallback string) string
@@ -103,25 +104,12 @@ func (a *Authenticator) introspectByHTTP(token string, traceID string) (string, 
 	return userID, nil
 }
 
-// RequiresAuth 标记需要网关鉴权的路径白名单（保护账户/订单/用户私有接口）。
+// RequiresAuth 根据网关路由表判断路径是否需鉴权。
 func RequiresAuth(path string) bool {
-	if path == "/v1/auth/logout" {
-		return true
-	}
-	if path == "/v1/member/users/profile" {
-		return true
-	}
-	return false
+	return routes.RequiresAuth(path)
 }
 
-// ExtractToken 统一 token 提取优先级：Authorization Bearer > token header > token query。
+// ExtractToken 委托 routes 包统一实现，便于测试与复用。
 func ExtractToken(r *http.Request) string {
-	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
-	if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
-		return strings.TrimSpace(authHeader[7:])
-	}
-	if token := strings.TrimSpace(r.Header.Get("token")); token != "" {
-		return token
-	}
-	return strings.TrimSpace(r.URL.Query().Get("token"))
+	return routes.ExtractToken(r)
 }

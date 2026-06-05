@@ -6,37 +6,39 @@
 
 ## [Unreleased]
 
+（暂无）
+
+## [0.2.0] - 2026-06-04
+
 ### Added
 
-- **docs/api**：API 规范（REST、认证、错误码、gRPC、WebSocket）。
-- **docs/conventions**：步骤级注释约定文档。
-- **.cursor/rules**：`code-comments.mdc`、`changelog.mdc`（及既有 api-http / api-errors / api-grpc）。
-- **.cursor/skills**：`api-change` 接口变更检查清单；`code-change` 通用变更流程。
-- **AGENTS.md**：Agent 必读指引。
-- **internal/platform/ws**：WebSocket `Hub` 接口与 `NoopHub` 占位。
-- **gateway**：`GET /v1/ws` 占位，HTTP 501 + 业务码 `50101`。
+- **docs/architecture/**：服务拓扑、配置说明、本地开发、**新增微服务 playbook**（`add-service.md`）。
+- **docker-compose.yml**：MySQL、Redis、member-service、gateway-service 一键启动。
+- **configs/app.dev.json**：本地 / Compose 环境配置。
+- **Makefile**：`build`、`dev`、`compose-up/down`、`proto`、`test`、`smoke`。
+- **internal/platform/errcode**：业务错误码与 message 常量。
+- **internal/gateway/routes**：声明式代理路由表与 `ExtractToken`。
+- **单元测试**：`httpx`、`config`、`routes`、`errcode`。
+- **docs/api**、**docs/conventions**、**.cursor/rules**、**.cursor/skills**、**AGENTS.md**（v0.1 延续并扩展）。
+- **internal/platform/ws**：WebSocket 占位；`GET /v1/ws` 返回 501 + `50101`。
 
 ### Changed
 
-- **gateway-service**：服务由 `api-gateway` 更名为 `gateway-service`（`cmd/gateway-service`、health、脚本、文档、Docker）；配置仅使用 `gateway_service_port` / `GATEWAY_SERVICE_PORT`（废弃 `api_gateway_port` / `API_GATEWAY_PORT`）。
-- **模块名**：`pricing-assistant` → `go-template`（`go.mod`、import 路径、proto `go_package`）。
-- **文档目录**：API 文档统一为 `docs/api/`（非服务名 `02-api`）。
-- **README**：Postman 路径修正为 `api/postman_collection.json`，并链接 API 文档。
-
-### Docs
-
-- **CHANGELOG.md**：建立变更日志制度。
-- **docs/conventions/code-comments.md**：步骤级注释细则与示例。
+- **定位**：README 升级为「微服务框架模版」，含目录树与 v0.3 路线图。
+- **gateway-service**：路由注册改为遍历 `routes.ProxyRoutes`；handler 使用 `errcode` 常量。
+- **member-service**：HTTP handler 使用 `errcode` 常量（行为不变）。
+- **模块名**：`pricing-assistant` → `go-template`。
+- **配置**：`gateway_service_port` / `GATEWAY_SERVICE_PORT`（废弃 `API_GATEWAY_PORT`）。
+- **Dockerfile**：镜像内包含 `configs/` 供 Compose 使用。
 
 ### Removed
 
-- **配置**：移除 `API_GATEWAY_PORT`、`api_gateway_port` 兼容逻辑。
+- **docs/02-api/**：与 `docs/api/` 重复的文档目录。
+- **configs/.env**：未使用的 `RABBITMQ_*`、`ORDER_SERVICE_URL`、`PUBLIC_WS_URL` 等变量。
 
-### Chore
+### Docs
 
-- **configs/.env**：与 `.env.example` 结构同步（保留本地 prod 取值）。
-- **.cursor/rules**：新增 `code-comments.mdc`、`changelog.mdc`（`alwaysApply: true`）。
-- **AGENTS.md** / **api-change** Skill：强制步骤注释与 CHANGELOG 更新。
+- **CHANGELOG** 与 **步骤级注释** 制度（`code-comments.mdc`）。
 
 ## [0.1.0] - 2026-06-04
 
@@ -47,5 +49,6 @@
 - Redis 不透明 token（12h TTL）；网关 gRPC/HTTP introspect 鉴权。
 - Postman 集合与 `scripts/smoke-auth-flow.sh` 冒烟脚本。
 
-[Unreleased]: https://github.com/your-org/go-template/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/go-template/releases/tag/v0.1.0
+[Unreleased]: CHANGELOG.md#unreleased
+[0.2.0]: CHANGELOG.md#020---2026-06-04
+[0.1.0]: CHANGELOG.md#010---2026-06-04
