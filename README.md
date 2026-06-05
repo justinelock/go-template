@@ -50,7 +50,7 @@ scripts/               # dev-up、smoke、gen-proto
 - 手动指定：`CONFIG_FILE=...`
 - 优先级：**系统环境变量 > configs/.env > .env > 配置文件 > 默认值**
 
-示例见 [`configs/.env.example`](configs/.env.example)。
+示例见 [`configs/.env.example`](configs/.env.example)；字段说明见 [`configs/README.md`](configs/README.md)。**修改 example 时请同步 `configs/.env`。**
 
 ## 快速启动
 

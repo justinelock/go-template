@@ -44,7 +44,9 @@ internal/order/
 | 文件 | 改动 |
 |------|------|
 | `internal/platform/config/config.go` | 增加 `OrderServicePort`、`OrderServiceURL` 等 |
-| `configs/.env.example` | 增加 `ORDER_SERVICE_PORT`、`ORDER_SERVICE_URL` |
+| `configs/.env.example` | 增加变量（含 `#` 注释） |
+| `configs/.env` | **与 example 同步** |
+| `configs/README.md` | 更新 JSON/ENV 字段表 |
 | `configs/app.dev.json` / `app.prod.json` | 增加对应 JSON 字段 |
 
 ## 4. 网关路由表
@@ -112,6 +114,6 @@ curl http://127.0.0.1:8180/v1/order/...   # 新接口
 | 修改 | `internal/gateway/transport/http/handler.go` |
 | 修改 | `cmd/gateway-service/main.go` |
 | 修改 | `internal/platform/config/config.go` |
-| 修改 | `configs/.env.example`、`app.dev.json`、`app.prod.json` |
+| 修改 | `configs/.env.example`、`configs/.env`、`configs/README.md`、`app.dev.json`、`app.prod.json` |
 | 修改 | `docker-compose.yml`、`Dockerfile`、`Makefile` |
 | 修改 | `docs/api/*`、`CHANGELOG.md` |
