@@ -19,10 +19,18 @@ type AppConfig struct {
 	MemberServiceGRPCAddr string `json:"member_service_grpc_addr"`
 	GatewayUseMemberGRPC  bool   `json:"gateway_use_member_grpc"`
 
+	// OrderServicePort order-service HTTP 端口。
+	OrderServicePort string `json:"order_service_port"`
+	// OrderServiceURL 网关回退 order HTTP 基址。
+	OrderServiceURL string `json:"order_service_url"`
+
 	MySQLDSN      string `json:"mysql_dsn"`
 	RedisAddr     string `json:"redis_addr"`
 	RedisPassword string `json:"redis_password"`
 	RedisDB       int    `json:"redis_db"`
+
+	// RabbitMQURL AMQP 连接串（order-service 结算 Demo）。
+	RabbitMQURL string `json:"rabbitmq_url"`
 
 	CORSAllowOrigin string `json:"cors_allow_origin"`
 
@@ -71,10 +79,15 @@ func defaultConfig() *AppConfig {
 		MemberServiceGRPCAddr: "127.0.0.1:9181",
 		GatewayUseMemberGRPC:  false,
 
+		OrderServicePort: "8182",
+		OrderServiceURL:  "http://127.0.0.1:8182",
+
 		MySQLDSN:      "",
 		RedisAddr:     "",
 		RedisPassword: "",
 		RedisDB:       0,
+
+		RabbitMQURL: "amqp://guest:guest@127.0.0.1:5672/",
 
 		CORSAllowOrigin: "http://localhost:5173",
 
@@ -166,6 +179,12 @@ func merge(dst, src *AppConfig) {
 	if src.GatewayUseMemberGRPC {
 		dst.GatewayUseMemberGRPC = true
 	}
+	if src.OrderServicePort != "" {
+		dst.OrderServicePort = src.OrderServicePort
+	}
+	if src.OrderServiceURL != "" {
+		dst.OrderServiceURL = src.OrderServiceURL
+	}
 	if src.MySQLDSN != "" {
 		dst.MySQLDSN = src.MySQLDSN
 	}
@@ -177,6 +196,9 @@ func merge(dst, src *AppConfig) {
 	}
 	if src.RedisDB != 0 {
 		dst.RedisDB = src.RedisDB
+	}
+	if src.RabbitMQURL != "" {
+		dst.RabbitMQURL = src.RabbitMQURL
 	}
 	if src.CORSAllowOrigin != "" {
 		dst.CORSAllowOrigin = src.CORSAllowOrigin
@@ -203,6 +225,9 @@ func overrideWithEnv(cfg *AppConfig) {
 	cfg.MemberServiceURL = getenv("MEMBER_SERVICE_URL", cfg.MemberServiceURL)
 	cfg.MemberServiceGRPCAddr = getenv("MEMBER_SERVICE_GRPC_ADDR", cfg.MemberServiceGRPCAddr)
 
+	cfg.OrderServicePort = getenv("ORDER_SERVICE_PORT", cfg.OrderServicePort)
+	cfg.OrderServiceURL = getenv("ORDER_SERVICE_URL", cfg.OrderServiceURL)
+
 	cfg.MySQLDSN = getenv("MYSQL_DSN", cfg.MySQLDSN)
 	cfg.RedisAddr = getenv("REDIS_ADDR", cfg.RedisAddr)
 	cfg.RedisPassword = getenv("REDIS_PASSWORD", cfg.RedisPassword)
@@ -211,6 +236,8 @@ func overrideWithEnv(cfg *AppConfig) {
 			cfg.RedisDB = parsed
 		}
 	}
+
+	cfg.RabbitMQURL = getenv("RABBITMQ_URL", cfg.RabbitMQURL)
 
 	cfg.CORSAllowOrigin = getenv("CORS_ALLOW_ORIGIN", cfg.CORSAllowOrigin)
 	cfg.ConsulAddress = getenv("CONSUL_ADDRESS", cfg.ConsulAddress)

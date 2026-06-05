@@ -43,10 +43,14 @@
 | 40014 | 400 | invalid request body | member | 资料更新 JSON 解析失败 |
 | 40015 | 400 | at least one field is required | member | 资料更新无有效字段 |
 | 40016 | 400 | mobile already exists | member | 注册手机号冲突 |
-| 40101 | 401 | token is required | gateway-service / member | 缺 token |
+| 40021 | 400 | invalid order input | order-service | 订单参数无效 |
+| 40022 | 400 | X-Idempotency-Key is required | order-service | 缺少幂等键 |
+| 40101 | 401 | token is required | gateway-service / member / order-service | 缺 token |
 | 40102 | 401 | token is invalid or expired | gateway-service / member | token 无效或过期 |
 | 40103 | 401 | username or password is invalid | member | 登录凭证错误 |
 | 40402 | 404 | user not found | member | 资料查询用户不存在 |
+| 40421 | 404 | order not found | order-service | 订单不存在 |
+| 40921 | 409 | order creation in progress, retry later | order-service | 分布式锁未获取 |
 
 ### 5xx 服务端
 
@@ -59,6 +63,8 @@
 | 50008 | 500 | register failed | member | 注册内部错误 |
 | 50009 | 500 | query user failed | member | 查询资料失败 |
 | 50010 | 500 | update profile failed | member | 更新资料失败 |
+| 50021 | 500 | create order failed | order-service | 创建订单内部错误 |
+| 50022 | 500 | query order failed | order-service | 查询订单失败 |
 
 > **注意**：`50001` 在 gateway-service 表示代理构建失败（502），在 member 表示登录失败（500）。新增码时避免跨服务复用同一数字。
 

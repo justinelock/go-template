@@ -26,7 +26,9 @@ type Handler struct {
 	authenticator *gatewayapp.Authenticator
 	// 步骤 4：member-service 回退地址（当服务发现失败时使用）。
 	memberURL string
-	// 步骤 5：跨域配置。
+	// 步骤 5：order-service 回退地址。
+	orderURL string
+	// 步骤 6：跨域配置。
 	corsAllowOrigin string
 }
 
@@ -36,6 +38,7 @@ func NewHandler(
 	resolve gatewayapp.Resolver,
 	authenticator *gatewayapp.Authenticator,
 	memberURL string,
+	orderURL string,
 	corsAllowOrigin string,
 ) *Handler {
 	// 步骤 1：注入依赖并返回可复用 Handler 实例。
@@ -44,6 +47,7 @@ func NewHandler(
 		resolve:         resolve,
 		authenticator:   authenticator,
 		memberURL:       memberURL,
+		orderURL:        orderURL,
 		corsAllowOrigin: corsAllowOrigin,
 	}
 }
@@ -65,6 +69,11 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// 步骤 2：按声明式路由表注册反向代理（见 internal/gateway/routes/routes.go）。
 	for _, route := range routes.ProxyRoutes {
 		mux.HandleFunc(route.PublicPath, h.proxyToService(route))
+	}
+
+	// 步骤 2b：前缀匹配代理（订单详情 GET /v1/order/orders/{id} 等）。
+	for _, route := range routes.ProxyPrefixRoutes {
+		mux.HandleFunc(route.PublicPath, h.proxyPrefixToService(route))
 	}
 
 	// 步骤 3：WebSocket 占位（规范见 docs/api/websocket.md）。
@@ -112,11 +121,30 @@ func (h *Handler) proxyToService(route routes.ProxyRoute) http.HandlerFunc {
 	}
 }
 
+// proxyPrefixToService 按前缀路由表构造下游代理 handler。
+func (h *Handler) proxyPrefixToService(route routes.ProxyRoute) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 步骤 1：截取 public 前缀后的路径段并拼接到下游。
+		suffix := strings.TrimPrefix(r.URL.Path, route.PublicPath)
+		fallback := h.serviceFallbackURL(route.ServiceName)
+		target := h.resolve(route.ServiceName, fallback) + route.UpstreamPath + suffix
+
+		// 步骤 2：透传 query 参数。
+		target = appendRawQuery(target, r)
+
+		// 步骤 3：执行统一代理。
+		h.proxy(w, r, target)
+	}
+}
+
 // serviceFallbackURL 返回服务发现失败时的静态回退基址。
 func (h *Handler) serviceFallbackURL(serviceName string) string {
 	switch serviceName {
 	case "member-service":
 		return h.memberURL
+	case "order-service":
+		// 步骤 1：order 回退至配置的 OrderServiceURL。
+		return h.orderURL
 	default:
 		return ""
 	}

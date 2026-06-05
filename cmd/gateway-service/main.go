@@ -67,6 +67,7 @@ func main() {
 		resolve,
 		authenticator,
 		cfg.MemberServiceURL,
+		cfg.OrderServiceURL,
 		cfg.CORSAllowOrigin,
 	)
 

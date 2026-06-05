@@ -25,12 +25,24 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   member-service:
     build: .
     command: ["/srv/bin/member-service"]
     environment:
       APP_ENV: dev
       CONFIG_FILE: configs/app.dev.json
+      SERVICE_HOST: member-service
     ports:
       - "8181:8181"
       - "9181:9181"
@@ -38,6 +50,23 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+
+  order-service:
+    build: .
+    command: ["/srv/bin/order-service"]
+    environment:
+      APP_ENV: dev
+      CONFIG_FILE: configs/app.dev.json
+      SERVICE_HOST: order-service
+    ports:
+      - "8182:8182"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   gateway-service:
@@ -50,3 +79,4 @@ services:
       - "8180:8180"
     depends_on:
       - member-service
+      - order-service

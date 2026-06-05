@@ -22,10 +22,13 @@
 | `MEMBER_SERVICE_URL` | 网关回退 member HTTP 基址 | http://127.0.0.1:8181 |
 | `MEMBER_SERVICE_GRPC_ADDR` | 网关 gRPC 地址 | 127.0.0.1:9181 |
 | `GATEWAY_USE_MEMBER_GRPC` | 鉴权是否优先 gRPC | false |
+| `ORDER_SERVICE_PORT` | order HTTP 端口 | 8182 |
+| `ORDER_SERVICE_URL` | 网关回退 order HTTP 基址 | http://127.0.0.1:8182 |
 | `MYSQL_DSN` | MySQL 连接串 | — |
 | `REDIS_ADDR` | Redis 地址 | — |
 | `REDIS_PASSWORD` | Redis 密码 | — |
 | `REDIS_DB` | Redis DB 序号 | 0 |
+| `RABBITMQ_URL` | RabbitMQ AMQP 连接串 | amqp://guest:guest@127.0.0.1:5672/ |
 | `CONSUL_ENABLED` | 是否启用 Consul | false |
 | `CONSUL_ADDRESS` | Consul 地址 | 127.0.0.1:8500 |
 | `CONSUL_DATACENTER` | Consul DC | dc1 |
@@ -52,6 +55,7 @@
 | Consul | 通常关闭 | 按需开启 |
 | CORS | `localhost:5173` | 正式前端域名 |
 
-## 可选基础设施（v0.3）
+## 可选基础设施
 
-`scripts/rabbitmq-*.command` 等脚本为本地辅助工具，**当前 Go 代码未读取 RabbitMQ 环境变量**，接入计划见 README 路线图 v0.3。
+- **RabbitMQ**：order-service Demo 使用，配置 `RABBITMQ_URL`；Compose 已内置 `rabbitmq` 服务。
+- `scripts/rabbitmq-*.command`：本机辅助脚本，非 Compose 必需。

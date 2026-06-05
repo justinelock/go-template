@@ -6,6 +6,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/hashicorp/consul/api v1.34.3
+	github.com/rabbitmq/amqp091-go v1.10.0
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
 )

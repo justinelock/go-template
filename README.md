@@ -1,6 +1,6 @@
 # go-template
 
-Go **微服务框架模版**：`gateway-service` + `member-service` 双服务骨架，统一 API 规范、网关鉴权、分层结构与协作文档，fork 后可按 playbook 扩展第三个业务服务。
+Go **微服务框架模版**：`gateway-service` + `member-service` + `order-service`（Demo）骨架，统一 API 规范、网关鉴权、分层结构与协作文档，fork 后可按 playbook 扩展业务服务。
 
 ## 适用场景
 
@@ -12,6 +12,7 @@ Go **微服务框架模版**：`gateway-service` + `member-service` 双服务骨
 
 - `gateway-service` (`:8180`)：统一 HTTP 入口，CORS、鉴权、反向代理（无业务逻辑）。
 - `member-service` (`:8181`，gRPC `:9181`)：注册、登录、登出、token introspect、用户资料。
+- `order-service` (`:8182`)：订单 Demo（Redis 幂等/锁 + RabbitMQ 异步结算），见 [order-demo.md](docs/architecture/order-demo.md)。
 
 ## 目录结构
 
@@ -19,10 +20,12 @@ Go **微服务框架模版**：`gateway-service` + `member-service` 双服务骨
 cmd/
   gateway-service/     # 网关入口
   member-service/      # 业务服务入口
+  order-service/       # 订单 Demo 入口
 internal/
   gateway/             # 鉴权、代理、路由表
   member/              # transport → app → repo → domain
-  platform/            # config、httpx、errcode、discovery、ws
+  order/               # 订单 Demo 域
+  platform/            # config、httpx、errcode、discovery、redislock、idempotency、mq、ws
 api/
   proto/               # gRPC 定义
   gen/                 # protoc 生成（勿手改）
@@ -35,8 +38,9 @@ scripts/               # dev-up、smoke、gen-proto
 
 ## 中间件
 
-- MySQL：用户数据
-- Redis：token 存储
+- MySQL：用户与订单数据
+- Redis：token 存储、幂等键、分布式锁
+- RabbitMQ：订单异步结算 Demo
 - Consul：可选服务注册与发现（`CONSUL_ENABLED=false` 可关闭）
 
 ## 配置规则
@@ -74,6 +78,8 @@ make smoke
 - `POST /v1/auth/logout`
 - `GET /v1/member/users/profile`
 - `PUT /v1/member/users/profile`
+- `POST /v1/order/orders`（需鉴权 + `X-Idempotency-Key`）
+- `GET /v1/order/orders/{id}`（需鉴权）
 
 完整约定见 [docs/api/README.md](docs/api/README.md)。
 
@@ -81,7 +87,7 @@ make smoke
 
 | 文档 | 说明 |
 |------|------|
-| [docs/architecture/](docs/architecture/README.md) | 架构、配置、本地开发、**新增服务 playbook** |
+| [docs/architecture/](docs/architecture/README.md) | 架构、配置、本地开发、**Redis 高并发**、**新增服务 playbook** |
 | [docs/api/](docs/api/README.md) | API 规范与错误码 |
 | [AGENTS.md](AGENTS.md) | Cursor Agent 指引 |
 | [CHANGELOG.md](CHANGELOG.md) | 变更日志 |
@@ -102,5 +108,5 @@ BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
 
 | 版本 | 内容 |
 |------|------|
-| **v0.2**（当前） | 架构文档、docker-compose、errcode、网关路由表、单元测试 |
-| v0.3 | OpenAPI、结构化日志、RabbitMQ 示例（GitHub Actions CI 已接入） |
+| **v0.2** | 架构文档、docker-compose、errcode、网关路由表、单元测试 |
+| **v0.3**（进行中） | order-service Demo、RabbitMQ、OpenAPI、结构化日志（GitHub Actions CI 已接入） |

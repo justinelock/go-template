@@ -28,6 +28,13 @@ const (
 	QueryUserFailed         = 50009
 	UpdateProfileFailed     = 50010
 	WebSocketNotImplemented = 50101
+
+	OrderInvalidInput        = 40021
+	OrderIdempotencyRequired = 40022
+	OrderNotFound            = 40421
+	OrderLockNotAcquired     = 40921
+	OrderCreateFailed        = 50021
+	OrderQueryFailed         = 50022
 )
 
 const (
@@ -52,4 +59,10 @@ const (
 	MsgQueryUserFailed          = "query user failed"
 	MsgUpdateProfileFailed      = "update profile failed"
 	MsgWebSocketNotImplemented  = "websocket not implemented"
+	MsgOrderInvalidInput        = "invalid order input"
+	MsgOrderIdempotencyRequired = "X-Idempotency-Key is required"
+	MsgOrderNotFound            = "order not found"
+	MsgOrderLockNotAcquired     = "order creation in progress, retry later"
+	MsgOrderCreateFailed        = "create order failed"
+	MsgOrderQueryFailed         = "query order failed"
 )

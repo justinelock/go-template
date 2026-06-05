@@ -54,3 +54,11 @@ transport/http|grpc  →  app  →  repo  →  domain
 ## 新增服务（如 order-service）
 
 复制 member-service 骨架，在网关 `routes.go` 增加代理条目。完整步骤见 [add-service.md](add-service.md)。
+
+**order-service Demo**（v0.3）：`cmd/order-service`，演示 Redis 幂等/锁 + RabbitMQ 异步结算。详见 [order-demo.md](order-demo.md)。
+
+| 职责 | 说明 |
+|------|------|
+| 创建订单 | POST `/v1/orders`，幂等键 + 分布式锁 |
+| 查询订单 | GET `/v1/orders/{id}` |
+| 异步结算 | 同进程 worker 消费 `order.settle` 队列 |

@@ -2,7 +2,7 @@
 
 ## 方式一：本机二进制（make dev）
 
-**前提**：本机已运行 MySQL、Redis，且 `configs/.env` 中 DSN/Redis 正确。
+**前提**：本机已运行 MySQL、Redis、RabbitMQ，且 `configs/.env` 中 DSN/Redis/RabbitMQ 正确。
 
 ```bash
 go mod tidy
@@ -11,11 +11,11 @@ curl http://127.0.0.1:8180/healthz
 make smoke
 ```
 
-日志：`./logs/gateway-service.log`、`./logs/member-service.log`
+日志：`./logs/gateway-service.log`、`./logs/member-service.log`、`./logs/order-service.log`
 
 ## 方式二：Docker Compose（推荐）
 
-一键启动 MySQL、Redis、member-service、gateway-service。
+一键启动 MySQL、Redis、RabbitMQ、member-service、order-service、gateway-service。
 
 ```bash
 make compose-up
@@ -23,7 +23,7 @@ make smoke
 make compose-down
 ```
 
-Compose 使用 `configs/app.dev.json`，服务间通过 Docker 网络名通信（`mysql`、`redis`、`member-service`）。
+Compose 使用 `configs/app.dev.json`，服务间通过 Docker 网络名通信（`mysql`、`redis`、`rabbitmq`、`member-service`、`order-service`）。
 
 ### MySQL 初始化
 
@@ -46,13 +46,13 @@ curl http://127.0.0.1:8181/healthz
 
 | 命令 | 说明 |
 |------|------|
-| `make build` | 编译两个服务到 `./bin/` |
+| `make build` | 编译三个服务到 `./bin/` |
 | `make dev` | 本机启动 |
 | `make compose-up` | Docker Compose 后台启动 |
 | `make compose-down` | 停止并移除容器 |
 | `make proto` | 生成 gRPC 代码 |
 | `make test` | 运行单元测试 |
-| `make smoke` | 认证流程冒烟 |
+| `make smoke` | 认证 + 订单 Demo 冒烟 |
 
 ## 合并前自检
 

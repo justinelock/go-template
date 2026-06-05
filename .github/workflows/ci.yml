@@ -26,7 +26,7 @@ jobs:
         run: go test ./...
 
       - name: Build services
-        run: go build -o /dev/null ./cmd/gateway-service ./cmd/member-service
+        run: go build -o /dev/null ./cmd/gateway-service ./cmd/member-service ./cmd/order-service
 
   compose-smoke:
     runs-on: ubuntu-latest
@@ -56,7 +56,9 @@ jobs:
           exit 1
 
       - name: Run smoke test
-        run: BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
+        run: |
+          BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
+          BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-order-flow.sh
 
       - name: Stop stack
         if: always()

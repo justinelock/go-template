@@ -6,8 +6,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **步骤级注释**：为 order-service、platform（redislock/idempotency/mq）、网关 order 路由及 smoke 脚本补充步骤注释，对齐 `docs/conventions/code-comments.md`。
+
 ### Added
 
+- **docs/architecture/redis-high-concurrency.md**：Redis 高并发使用指南（Redisson 概念对照、分布式锁、幂等、多业务场景示例）。
+- **order-service Demo**：Redis 幂等/分布式锁 + RabbitMQ 异步结算；平台包 `redislock`、`idempotency`、`mq`。
+- **docs/architecture/order-demo.md**：订单 Demo 流程与 curl 示例。
+- **scripts/smoke-order-flow.sh**：下单幂等与结算轮询冒烟。
+- **docker-compose**：新增 `rabbitmq`、`order-service` 服务。
 - **GitHub Actions CI**：新增 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，包含 `test-and-build` 与 `compose-smoke` 两个 job。
 
 ### Removed

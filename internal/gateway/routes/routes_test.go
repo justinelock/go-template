@@ -15,6 +15,8 @@ func TestRequiresAuth_routes(t *testing.T) {
 		{"/v1/auth/register", false},
 		{"/v1/auth/logout", true},
 		{"/v1/member/users/profile", true},
+		{"/v1/order/orders", true},
+		{"/v1/order/orders/123", true},
 		{"/healthz", false},
 	}
 	for _, tc := range cases {

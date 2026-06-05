@@ -53,5 +53,23 @@ CREATE TABLE `users`
 BEGIN;
 COMMIT;
 
+-- ----------------------------
+-- Table structure for orders
+-- ----------------------------
+DROP TABLE IF EXISTS `orders`;
+CREATE TABLE `orders`
+(
+    `id`               bigint         NOT NULL AUTO_INCREMENT COMMENT '订单ID',
+    `user_id`          bigint         NOT NULL COMMENT '用户ID',
+    `product_id`       varchar(64)    NOT NULL COMMENT '商品ID',
+    `amount`           decimal(12, 2) NOT NULL COMMENT '金额',
+    `status`           tinyint        NOT NULL DEFAULT '0' COMMENT '0-pending 1-settled',
+    `idempotency_key`  varchar(128)   NOT NULL COMMENT '幂等键',
+    `created_at`       datetime       NOT NULL COMMENT '创建时间',
+    `updated_at`       datetime                DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_idempotency` (`user_id`, `idempotency_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='订单表';
+
 SET
 FOREIGN_KEY_CHECKS = 1;
