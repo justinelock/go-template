@@ -82,6 +82,8 @@ type UserRecord struct {
 	CreatedAt string
 	// UpdatedAt 为更新时间。
 	UpdatedAt string
+	// Role 为用户角色。
+	Role string
 }
 
 var (

@@ -39,6 +39,8 @@ type LoginResp struct {
 	CreatedAt string `json:"createdAt"`
 	// UpdatedAt 为更新时间。
 	UpdatedAt string `json:"updatedAt"`
+	// Role 为用户角色。
+	Role string `json:"role"`
 }
 
 // UserResp 用户资料响应，对应 users 表字段。
@@ -71,4 +73,6 @@ type UserResp struct {
 	CreatedAt string `json:"createdAt"`
 	// UpdatedAt 为更新时间。
 	UpdatedAt string `json:"updatedAt"`
+	// Role 为用户角色。
+	Role string `json:"role"`
 }

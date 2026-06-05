@@ -15,4 +15,10 @@ type TokenRepository interface {
 	DeleteToken(ctx context.Context, token string) error
 	// GetUserIDByToken 通过 token 反查 userID（鉴权场景）。
 	GetUserIDByToken(ctx context.Context, token string) (string, error)
+	// SetRefreshToken 保存 refresh token。
+	SetRefreshToken(ctx context.Context, token, userID string, ttl time.Duration) error
+	// GetUserIDByRefreshToken 反查 refresh token。
+	GetUserIDByRefreshToken(ctx context.Context, token string) (string, error)
+	// DeleteRefreshToken 删除 refresh token。
+	DeleteRefreshToken(ctx context.Context, token string) error
 }

@@ -11,7 +11,9 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
+// RedisTokenRepo 基于 Redis 的 access/refresh token 存储实现。
 type RedisTokenRepo struct {
+	// 步骤 1：Redis 客户端（token:{access}、refresh:{refresh} 键空间）。
 	redis *redis.Client
 }
 
@@ -52,4 +54,33 @@ func (r *RedisTokenRepo) GetUserIDByToken(ctx context.Context, token string) (st
 
 	// 步骤 5：返回命中的 userID。
 	return userID, nil
+}
+
+// SetRefreshToken 写入 refresh:{token} -> userID 映射。
+func (r *RedisTokenRepo) SetRefreshToken(ctx context.Context, token, userID string, ttl time.Duration) error {
+	// 步骤 1：标准化 token 后写入 Redis 并设置 TTL。
+	return r.redis.Set(ctx, "refresh:"+strings.TrimSpace(token), userID, ttl).Err()
+}
+
+// GetUserIDByRefreshToken 通过 refresh token 反查 userID。
+func (r *RedisTokenRepo) GetUserIDByRefreshToken(ctx context.Context, token string) (string, error) {
+	// 步骤 1：校验 token 必填。
+	if strings.TrimSpace(token) == "" {
+		return "", domain.ErrTokenRequired
+	}
+	// 步骤 2：查询 refresh 映射。
+	userID, err := r.redis.Get(ctx, "refresh:"+strings.TrimSpace(token)).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", domain.ErrTokenInvalid
+	}
+	if err != nil {
+		return "", err
+	}
+	return userID, nil
+}
+
+// DeleteRefreshToken 删除 refresh token（登出或轮换时调用）。
+func (r *RedisTokenRepo) DeleteRefreshToken(ctx context.Context, token string) error {
+	// 步骤 1：删除 refresh 键。
+	return r.redis.Del(ctx, "refresh:"+strings.TrimSpace(token)).Err()
 }

@@ -79,11 +79,17 @@ func (b *rabbitBus) Publish(ctx context.Context, msg Message) error {
 		return err
 	}
 
+	headers := amqp.Table{}
+	for k, v := range msg.Headers {
+		headers[k] = v
+	}
+
 	// 步骤 2：带 context 发布持久化消息。
 	return b.channel.PublishWithContext(ctx, RabbitExchange(), routingKey, false, false, amqp.Publishing{
 		ContentType:  "text/plain",
 		DeliveryMode: amqp.Persistent,
 		Body:         msg.Body,
+		Headers:      headers,
 		Timestamp:    time.Now(),
 	})
 }
@@ -112,7 +118,13 @@ func (b *rabbitBus) Subscribe(ctx context.Context, topic, group string, handler 
 				if !ok {
 					return
 				}
-				m := Message{Topic: topic, Body: d.Body}
+				hdr := make(map[string]string)
+				for k, v := range d.Headers {
+					if s, ok := v.(string); ok {
+						hdr[k] = s
+					}
+				}
+				m := Message{Topic: topic, Body: d.Body, Headers: hdr}
 				if err := handler(ctx, m); err != nil {
 					_ = d.Nack(false, true)
 					continue

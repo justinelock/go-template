@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -57,8 +56,10 @@ func (s *Service) Login(ctx context.Context, req domain.LoginReq) (*vo.LoginResp
 		return nil, err
 	}
 	if !verifyPassword(user.Password, req.Password) {
+		s.recordLoginFailure()
 		return nil, domain.ErrInvalidCredentials
 	}
+	s.maybeUpgradePassword(ctx, user, req.Password)
 
 	// 步骤 4：生成 access/refresh token。
 	accessToken, err := generateToken(32)
@@ -70,8 +71,11 @@ func (s *Service) Login(ctx context.Context, req domain.LoginReq) (*vo.LoginResp
 		return nil, err
 	}
 
-	// 步骤 5：保存 access token -> userID 映射，用于后续 introspect。
+	// 步骤 5：保存 access/refresh token。
 	if err := s.tokens.SetToken(ctx, accessToken, user.ID, AccessTokenTTL); err != nil {
+		return nil, err
+	}
+	if err := s.tokens.SetRefreshToken(ctx, refreshToken, user.ID, RefreshTokenTTL); err != nil {
 		return nil, err
 	}
 
@@ -94,6 +98,7 @@ func (s *Service) Login(ctx context.Context, req domain.LoginReq) (*vo.LoginResp
 		Verified:     user.Verified,
 		Avatar:       user.Avatar,
 		Remark:       user.Remark,
+		Role:         user.Role,
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 	}, nil
@@ -143,14 +148,16 @@ func (s *Service) Register(ctx context.Context, req domain.RegisterReq) (*vo.Use
 	return s.GetUserProfile(ctx, userID)
 }
 
-// Logout 删除 access token 绑定关系，使当前登录态失效。
-func (s *Service) Logout(ctx context.Context, token string) error {
-	// 步骤 1：校验 token 非空。
-	if strings.TrimSpace(token) == "" {
+// Logout 删除 access/refresh token，使当前登录态失效。
+func (s *Service) Logout(ctx context.Context, accessToken, refreshToken string) error {
+	if strings.TrimSpace(accessToken) == "" {
 		return domain.ErrTokenRequired
 	}
-	// 步骤 2：删除 token 映射。
-	return s.tokens.DeleteToken(ctx, token)
+	_ = s.tokens.DeleteToken(ctx, accessToken)
+	if strings.TrimSpace(refreshToken) != "" {
+		_ = s.tokens.DeleteRefreshToken(ctx, refreshToken)
+	}
+	return nil
 }
 
 // IntrospectToken 根据 token 反查 userID，供网关和服务内鉴权复用。
@@ -191,6 +198,7 @@ func (s *Service) GetUserProfile(ctx context.Context, userID string) (*vo.UserRe
 		Verified:   user.Verified,
 		Avatar:     user.Avatar,
 		Remark:     user.Remark,
+		Role:       user.Role,
 		CreatedAt:  user.CreatedAt,
 		UpdatedAt:  user.UpdatedAt,
 	}, nil
@@ -210,24 +218,6 @@ func (s *Service) UpdateUserProfile(ctx context.Context, userID string, req doma
 
 	// 步骤 3：返回更新后最新资料。
 	return s.GetUserProfile(ctx, userID)
-}
-
-// hashPassword 与 Java 旧系统保持一致，使用 MD5 小写十六进制。
-// 注意：这里只为兼容历史系统；新系统建议采用更安全的密码哈希方案。
-func hashPassword(raw string) string {
-	// Legacy (do not delete): SHA-256 hashing
-	// sum := sha256.Sum256([]byte(raw))
-	// return hex.EncodeToString(sum[:])
-
-	// 步骤 1：对原始密码做 MD5 并转小写十六进制字符串。
-	sum := md5.Sum([]byte(raw))
-	return hex.EncodeToString(sum[:])
-}
-
-// verifyPassword 兼容明文遗留数据与 MD5 哈希数据。
-func verifyPassword(stored, provided string) bool {
-	// 步骤 1：兼容“明文等于”与“MD5 后等于”两种历史数据形态。
-	return stored == provided || stored == hashPassword(provided)
 }
 
 // generateToken 生成指定字节长度的随机 token（hex 编码后长度翻倍）。

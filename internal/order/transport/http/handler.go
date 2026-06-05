@@ -36,17 +36,9 @@ func NewHandler(svc *orderapp.Service) *Handler {
 // RegisterRoutes 注册 order-service 对外 HTTP 路由。
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// 步骤 1：注册健康检查。
-	mux.HandleFunc("/healthz", h.healthz)
 	// 步骤 2：注册创建订单与按 ID 查询路由。
 	mux.HandleFunc("/v1/orders", h.orders)
 	mux.HandleFunc("/v1/orders/", h.orderByID)
-}
-
-// healthz 返回 order 服务健康状态。
-func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
-	// 步骤 1：生成 traceID 并输出统一响应。
-	traceID := httpx.EnsureTraceID(r)
-	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, map[string]string{"service": "order-service"})
 }
 
 // orders 处理创建订单（POST /v1/orders）。

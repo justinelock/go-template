@@ -35,6 +35,16 @@ const (
 	OrderLockNotAcquired     = 40921
 	OrderCreateFailed        = 50021
 	OrderQueryFailed         = 50022
+
+	ServiceUnavailable  = 50301
+	RateLimitExceeded   = 42901
+	Forbidden           = 40301
+	RefreshTokenInvalid = 40104
+
+	PaymentInvalidInput = 40031
+	PaymentNotFound     = 40431
+	PaymentCreateFailed = 50031
+	PaymentMockDisabled = 40331
 )
 
 const (
@@ -65,4 +75,14 @@ const (
 	MsgOrderLockNotAcquired     = "order creation in progress, retry later"
 	MsgOrderCreateFailed        = "create order failed"
 	MsgOrderQueryFailed         = "query order failed"
+
+	MsgServiceUnavailable  = "service not ready"
+	MsgRateLimitExceeded   = "rate limit exceeded"
+	MsgForbidden           = "forbidden"
+	MsgRefreshTokenInvalid = "refresh token is invalid or expired"
+
+	MsgPaymentInvalidInput = "invalid payment input"
+	MsgPaymentNotFound     = "payment not found"
+	MsgPaymentCreateFailed = "create payment failed"
+	MsgPaymentMockDisabled = "mock pay is disabled"
 )

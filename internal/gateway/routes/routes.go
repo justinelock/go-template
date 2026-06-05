@@ -12,6 +12,8 @@ type ProxyRoute struct {
 	ServiceName string
 	// RequiresAuth 是否需在网关层校验 token。
 	RequiresAuth bool
+	// RequiredRoles 非空时要求用户角色命中其一（如 admin）。
+	RequiredRoles []string
 }
 
 // ProxyRoutes 当前已注册的反向代理路由表（新增服务在此追加条目）。
@@ -19,13 +21,16 @@ var ProxyRoutes = []ProxyRoute{
 	{PublicPath: "/v1/auth/login", UpstreamPath: "/v1/auth/login", ServiceName: "member-service", RequiresAuth: false},
 	{PublicPath: "/v1/auth/register", UpstreamPath: "/v1/auth/register", ServiceName: "member-service", RequiresAuth: false},
 	{PublicPath: "/v1/auth/logout", UpstreamPath: "/v1/auth/logout", ServiceName: "member-service", RequiresAuth: true},
+	{PublicPath: "/v1/auth/refresh", UpstreamPath: "/v1/auth/refresh", ServiceName: "member-service", RequiresAuth: false},
 	{PublicPath: "/v1/member/users/profile", UpstreamPath: "/v1/users/profile", ServiceName: "member-service", RequiresAuth: true},
 	{PublicPath: "/v1/order/orders", UpstreamPath: "/v1/orders", ServiceName: "order-service", RequiresAuth: true},
+	{PublicPath: "/v1/payment/payments", UpstreamPath: "/v1/payments", ServiceName: "payment-service", RequiresAuth: true},
 }
 
 // ProxyPrefixRoutes 前缀匹配代理（如 GET /v1/order/orders/{id}）。
 var ProxyPrefixRoutes = []ProxyRoute{
 	{PublicPath: "/v1/order/orders/", UpstreamPath: "/v1/orders/", ServiceName: "order-service", RequiresAuth: true},
+	{PublicPath: "/v1/payment/payments/", UpstreamPath: "/v1/payments/", ServiceName: "payment-service", RequiresAuth: true},
 }
 
 // RequiresAuth 根据路由表判断路径是否需要在网关鉴权。
@@ -43,4 +48,22 @@ func RequiresAuth(path string) bool {
 		}
 	}
 	return false
+}
+
+// RequiredRolesForPath 返回路径所需角色；nil 表示任意登录用户。
+func RequiredRolesForPath(path string) []string {
+	// 步骤 1：精确匹配 ProxyRoutes。
+	for _, route := range ProxyRoutes {
+		if route.PublicPath == path {
+			return route.RequiredRoles
+		}
+	}
+	// 步骤 2：前缀匹配 ProxyPrefixRoutes。
+	for _, route := range ProxyPrefixRoutes {
+		if strings.HasPrefix(path, route.PublicPath) {
+			return route.RequiredRoles
+		}
+	}
+	// 步骤 3：无角色要求。
+	return nil
 }

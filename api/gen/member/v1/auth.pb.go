@@ -79,6 +79,7 @@ type IntrospectResponse struct {
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	TraceId       string                 `protobuf:"bytes,4,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
+	Role          string                 `protobuf:"bytes,5,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,6 +138,13 @@ func (x *IntrospectResponse) GetUserId() string {
 func (x *IntrospectResponse) GetTraceId() string {
 	if x != nil {
 		return x.TraceId
+	}
+	return ""
+}
+
+func (x *IntrospectResponse) GetRole() string {
+	if x != nil {
+		return x.Role
 	}
 	return ""
 }

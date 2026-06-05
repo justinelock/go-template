@@ -2,10 +2,11 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	orderapp "go-template/internal/order/app"
+	"go-template/internal/platform/logging"
 	"go-template/internal/platform/mq"
 )
 
@@ -16,19 +17,18 @@ func StartSettlement(bus mq.Bus, svc *orderapp.Service) error {
 
 	// 步骤 2：订阅逻辑 Topic + ConsumerGroup，与 MQ 实现无关。
 	return bus.Subscribe(ctx, mq.TopicOrderSettle, mq.GroupOrderSettlement, func(ctx context.Context, msg mq.Message) error {
+		if tid := mq.TraceIDFromMessage(msg); tid != "" {
+			ctx = logging.WithTraceID(ctx, tid)
+		}
 		orderID := string(msg.Body)
-
-		// 步骤 3：模拟结算耗时。
 		time.Sleep(200 * time.Millisecond)
-
-		// 步骤 4：更新订单状态为 settled。
 		callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		if err := svc.SettleOrder(callCtx, orderID); err != nil {
-			log.Printf("settlement failed order=%s err=%v", orderID, err)
+			slog.Error("settlement failed", "order_id", orderID, "err", err)
 			return err
 		}
-		log.Printf("order settled: %s", orderID)
+		slog.Info("order settled", "order_id", orderID)
 		return nil
 	})
 }

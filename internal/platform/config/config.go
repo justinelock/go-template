@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+// AppConfig 全服务共享配置（.env / JSON / 环境变量合并加载）。
 type AppConfig struct {
 	GatewayServicePort    string `json:"gateway_service_port"`
 	MemberServicePort     string `json:"member_service_port"`
@@ -40,13 +41,30 @@ type AppConfig struct {
 
 	CORSAllowOrigin string `json:"cors_allow_origin"`
 
+	LogLevel  string `json:"log_level"`
+	LogFormat string `json:"log_format"`
+
+	OtelEnabled              bool   `json:"otel_enabled"`
+	OtelExporterOTLPEndpoint string `json:"otel_exporter_otlp_endpoint"`
+
+	RateLimitEnabled     bool   `json:"rate_limit_enabled"`
+	RateLimitRedisPrefix string `json:"rate_limit_redis_prefix"`
+
+	GatewayProxyTimeoutSec int `json:"gateway_proxy_timeout_sec"`
+
+	PaymentServicePort    string `json:"payment_service_port"`
+	PaymentServiceURL     string `json:"payment_service_url"`
+	PaymentMockPayEnabled bool   `json:"payment_mock_pay_enabled"`
+
 	ConsulEnabled    bool   `json:"consul_enabled"`
 	ConsulAddress    string `json:"consul_address"`
 	ConsulDatacenter string `json:"consul_datacenter"`
 	ServiceHost      string `json:"service_host"`
 }
 
+// Load 按优先级合并默认配置、.env、JSON 文件与环境变量。
 func Load() (*AppConfig, error) {
+	// 步骤 1：从内置默认值起步。
 	cfg := defaultConfig()
 
 	if err := loadDotEnv("configs/.env"); err != nil {
@@ -99,6 +117,21 @@ func defaultConfig() *AppConfig {
 		RocketMQNameSrv: "127.0.0.1:9876",
 
 		CORSAllowOrigin: "http://localhost:5173",
+
+		LogLevel:  "info",
+		LogFormat: "json",
+
+		OtelEnabled:              false,
+		OtelExporterOTLPEndpoint: "",
+
+		RateLimitEnabled:     false,
+		RateLimitRedisPrefix: "ratelimit",
+
+		GatewayProxyTimeoutSec: 5,
+
+		PaymentServicePort:    "8183",
+		PaymentServiceURL:     "http://127.0.0.1:8183",
+		PaymentMockPayEnabled: true,
 
 		ConsulEnabled:    true,
 		ConsulAddress:    "",
@@ -220,6 +253,36 @@ func merge(dst, src *AppConfig) {
 	if src.CORSAllowOrigin != "" {
 		dst.CORSAllowOrigin = src.CORSAllowOrigin
 	}
+	if src.LogLevel != "" {
+		dst.LogLevel = src.LogLevel
+	}
+	if src.LogFormat != "" {
+		dst.LogFormat = src.LogFormat
+	}
+	if src.OtelExporterOTLPEndpoint != "" {
+		dst.OtelExporterOTLPEndpoint = src.OtelExporterOTLPEndpoint
+	}
+	if src.RateLimitRedisPrefix != "" {
+		dst.RateLimitRedisPrefix = src.RateLimitRedisPrefix
+	}
+	if src.PaymentServicePort != "" {
+		dst.PaymentServicePort = src.PaymentServicePort
+	}
+	if src.PaymentServiceURL != "" {
+		dst.PaymentServiceURL = src.PaymentServiceURL
+	}
+	if src.OtelEnabled {
+		dst.OtelEnabled = true
+	}
+	if src.RateLimitEnabled {
+		dst.RateLimitEnabled = true
+	}
+	if src.PaymentMockPayEnabled {
+		dst.PaymentMockPayEnabled = true
+	}
+	if src.GatewayProxyTimeoutSec > 0 {
+		dst.GatewayProxyTimeoutSec = src.GatewayProxyTimeoutSec
+	}
 	if src.ConsulEnabled {
 		dst.ConsulEnabled = true
 	}
@@ -263,6 +326,30 @@ func overrideWithEnv(cfg *AppConfig) {
 	}
 
 	cfg.CORSAllowOrigin = getenv("CORS_ALLOW_ORIGIN", cfg.CORSAllowOrigin)
+	cfg.LogLevel = getenv("LOG_LEVEL", cfg.LogLevel)
+	cfg.LogFormat = getenv("LOG_FORMAT", cfg.LogFormat)
+	cfg.OtelExporterOTLPEndpoint = getenv("OTEL_EXPORTER_OTLP_ENDPOINT", cfg.OtelExporterOTLPEndpoint)
+	cfg.RateLimitRedisPrefix = getenv("RATE_LIMIT_REDIS_PREFIX", cfg.RateLimitRedisPrefix)
+
+	cfg.PaymentServicePort = getenv("PAYMENT_SERVICE_PORT", cfg.PaymentServicePort)
+	cfg.PaymentServiceURL = getenv("PAYMENT_SERVICE_URL", cfg.PaymentServiceURL)
+
+	if raw := os.Getenv("GATEWAY_PROXY_TIMEOUT_SEC"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			cfg.GatewayProxyTimeoutSec = parsed
+		}
+	}
+
+	if raw := os.Getenv("OTEL_ENABLED"); raw != "" {
+		cfg.OtelEnabled = toBool(raw, cfg.OtelEnabled)
+	}
+	if raw := os.Getenv("RATE_LIMIT_ENABLED"); raw != "" {
+		cfg.RateLimitEnabled = toBool(raw, cfg.RateLimitEnabled)
+	}
+	if raw := os.Getenv("PAYMENT_MOCK_PAY_ENABLED"); raw != "" {
+		cfg.PaymentMockPayEnabled = toBool(raw, cfg.PaymentMockPayEnabled)
+	}
+
 	cfg.ConsulAddress = getenv("CONSUL_ADDRESS", cfg.ConsulAddress)
 	cfg.ConsulDatacenter = getenv("CONSUL_DATACENTER", cfg.ConsulDatacenter)
 	cfg.ServiceHost = getenv("SERVICE_HOST", cfg.ServiceHost)

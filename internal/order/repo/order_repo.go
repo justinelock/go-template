@@ -11,5 +11,6 @@ type OrderRepository interface {
 	Create(ctx context.Context, order domain.Order) (string, error)
 	GetByID(ctx context.Context, userID, orderID string) (*domain.Order, error)
 	GetByIdempotencyKey(ctx context.Context, userID, key string) (*domain.Order, error)
+	MarkPaid(ctx context.Context, orderID string) error
 	MarkSettled(ctx context.Context, orderID string) error
 }

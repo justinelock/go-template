@@ -65,12 +65,21 @@ FROM orders WHERE user_id = ? AND idempotency_key = ?`, userID, key)
 	return order, err
 }
 
-// MarkSettled 将 pending 订单更新为 settled。
+// MarkPaid 将 pending_payment 订单更新为 paid。
+func (r *MySQLOrderRepo) MarkPaid(ctx context.Context, orderID string) error {
+	// 步骤 1：条件更新 status=1，仅 pending_payment 可变为 paid。
+	now := time.Now()
+	_, err := r.db.ExecContext(ctx, `
+UPDATE orders SET status = 1, updated_at = ? WHERE id = ? AND status = 0`, now, orderID)
+	return err
+}
+
+// MarkSettled 将 paid 订单更新为 settled。
 func (r *MySQLOrderRepo) MarkSettled(ctx context.Context, orderID string) error {
-	// 步骤 1：条件更新 status=1，仅 pending 可被结算。
+	// 步骤 1：条件更新 status=2，仅 paid 可被结算。
 	now := time.Now()
 	res, err := r.db.ExecContext(ctx, `
-UPDATE orders SET status = 1, updated_at = ? WHERE id = ? AND status = 0`, now, orderID)
+UPDATE orders SET status = 2, updated_at = ? WHERE id = ? AND status = 1`, now, orderID)
 	if err != nil {
 		return err
 	}
@@ -98,9 +107,12 @@ func scanOrder(row *sql.Row) (*domain.Order, error) {
 		}
 		return nil, err
 	}
-	// 步骤 2：映射 status 整型为领域字符串。
-	orderStatus := domain.StatusPending
-	if status == 1 {
+	// 步骤 2：映射 status 整型为领域字符串（0=pending_payment,1=paid,2=settled）。
+	orderStatus := domain.StatusPendingPayment
+	switch status {
+	case 1:
+		orderStatus = domain.StatusPaid
+	case 2:
 		orderStatus = domain.StatusSettled
 	}
 	// 步骤 3：组装 Order 实体。

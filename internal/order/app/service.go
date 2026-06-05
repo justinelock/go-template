@@ -11,6 +11,7 @@ import (
 	"go-template/internal/order/repo"
 	"go-template/internal/order/vo"
 	"go-template/internal/platform/idempotency"
+	"go-template/internal/platform/metrics"
 	"go-template/internal/platform/redislock"
 
 	"github.com/go-redis/redis/v8"
@@ -18,8 +19,9 @@ import (
 
 const lockTTL = 30 * time.Second
 
-// Publisher 发布结算消息的抽象，便于测试替换。
+// Publisher 发布订单相关消息的抽象，便于测试替换。
 type Publisher interface {
+	PublishPaymentCreated(ctx context.Context, orderID, userID string, amount float64) error
 	PublishSettle(ctx context.Context, orderID string) error
 }
 
@@ -66,6 +68,7 @@ func (s *Service) CreateOrder(ctx context.Context, req domain.CreateOrderReq) (*
 
 	// 步骤 2：Redis 幂等快路径。
 	if rec, err := s.idempotency.Get(ctx, scope, req.IdempotencyKey); err == nil {
+		metrics.IdempotencyHitTotal.Inc()
 		return &vo.CreateOrderResp{OrderID: rec.OrderID, Status: rec.Status}, nil
 	} else if !errors.Is(err, idempotency.ErrNotFound) {
 		return nil, err
@@ -101,26 +104,27 @@ func (s *Service) CreateOrder(ctx context.Context, req domain.CreateOrderReq) (*
 		return resp, nil
 	}
 
-	// 步骤 6：写入 pending 订单。
+	// 步骤 6：写入 pending_payment 订单。
 	orderID, err := s.orders.Create(ctx, domain.Order{
 		UserID:         req.UserID,
 		ProductID:      req.ProductID,
 		Amount:         req.Amount,
-		Status:         domain.StatusPending,
+		Status:         domain.StatusPendingPayment,
 		IdempotencyKey: req.IdempotencyKey,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// 步骤 7：发布结算消息。
-	if err := s.publisher.PublishSettle(ctx, orderID); err != nil {
+	// 步骤 7：通知 payment-service 创建支付单。
+	if err := s.publisher.PublishPaymentCreated(ctx, orderID, req.UserID, req.Amount); err != nil {
 		return nil, err
 	}
+	metrics.OrderCreatedTotal.Inc()
 
 	// 步骤 8：缓存幂等结果。
-	resp := &vo.CreateOrderResp{OrderID: orderID, Status: domain.StatusPending}
-	_ = s.idempotency.Set(ctx, scope, req.IdempotencyKey, idempotency.Record{OrderID: orderID, Status: domain.StatusPending})
+	resp := &vo.CreateOrderResp{OrderID: orderID, Status: domain.StatusPendingPayment}
+	_ = s.idempotency.Set(ctx, scope, req.IdempotencyKey, idempotency.Record{OrderID: orderID, Status: domain.StatusPendingPayment})
 	return resp, nil
 }
 
@@ -136,8 +140,24 @@ func (s *Service) GetOrder(ctx context.Context, userID, orderID string) (*vo.Ord
 	return &out, nil
 }
 
+// MarkPaidAndSettle 支付成功后标记 paid 并投递结算消息。
+func (s *Service) MarkPaidAndSettle(ctx context.Context, orderID string) error {
+	// 步骤 1：清洗 orderID 并更新为 paid。
+	orderID = strings.TrimSpace(orderID)
+	if err := s.orders.MarkPaid(ctx, orderID); err != nil {
+		return err
+	}
+	// 步骤 2：投递 order.settle 异步结算。
+	return s.publisher.PublishSettle(ctx, orderID)
+}
+
 // SettleOrder 将订单标记为 settled（worker 调用）。
 func (s *Service) SettleOrder(ctx context.Context, orderID string) error {
-	// 步骤 1：更新 MySQL 状态为 settled。
-	return s.orders.MarkSettled(ctx, strings.TrimSpace(orderID))
+	// 步骤 1：条件更新为 settled。
+	if err := s.orders.MarkSettled(ctx, strings.TrimSpace(orderID)); err != nil {
+		return err
+	}
+	// 步骤 2：记录结算指标。
+	metrics.SettlementProcessedTotal.Inc()
+	return nil
 }

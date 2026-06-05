@@ -10,7 +10,9 @@ import (
 	"go-template/internal/gateway/routes"
 	"go-template/internal/gateway/vo"
 	"go-template/internal/platform/errcode"
+	"go-template/internal/platform/gatewayresilience"
 	"go-template/internal/platform/httpx"
+	"go-template/internal/platform/ratelimit"
 )
 
 // Handler 负责 API Gateway 的 HTTP 入站处理：
@@ -28,8 +30,14 @@ type Handler struct {
 	memberURL string
 	// 步骤 5：order-service 回退地址。
 	orderURL string
+	// 步骤 5b：payment-service 回退地址。
+	paymentURL string
 	// 步骤 6：跨域配置。
 	corsAllowOrigin string
+	// 步骤 7：限流与断路器（可选）。
+	rateLimiter      *ratelimit.Limiter
+	rateLimitEnabled bool
+	breakerPool      *gatewayresilience.BreakerPool
 }
 
 // NewHandler 组装网关 HTTP 处理器依赖。
@@ -39,16 +47,24 @@ func NewHandler(
 	authenticator *gatewayapp.Authenticator,
 	memberURL string,
 	orderURL string,
+	paymentURL string,
 	corsAllowOrigin string,
+	rateLimiter *ratelimit.Limiter,
+	rateLimitEnabled bool,
+	breakerPool *gatewayresilience.BreakerPool,
 ) *Handler {
 	// 步骤 1：注入依赖并返回可复用 Handler 实例。
 	return &Handler{
-		httpClient:      httpClient,
-		resolve:         resolve,
-		authenticator:   authenticator,
-		memberURL:       memberURL,
-		orderURL:        orderURL,
-		corsAllowOrigin: corsAllowOrigin,
+		httpClient:       httpClient,
+		resolve:          resolve,
+		authenticator:    authenticator,
+		memberURL:        memberURL,
+		orderURL:         orderURL,
+		paymentURL:       paymentURL,
+		corsAllowOrigin:  corsAllowOrigin,
+		rateLimiter:      rateLimiter,
+		rateLimitEnabled: rateLimitEnabled,
+		breakerPool:      breakerPool,
 	}
 }
 
@@ -56,14 +72,13 @@ func NewHandler(
 // 先鉴权，再 CORS（保证错误响应也带跨域头）。
 func (h *Handler) BuildServer(mux *http.ServeMux) http.Handler {
 	// 步骤 1：链式包裹中间件并返回最终入口 handler。
-	return h.withCORS(h.withAuth(mux))
+	return h.withCORS(h.withRateLimit(h.withAuth(mux)))
 }
 
 // RegisterRoutes 注册网关公开路由。
 // 约束：网关仅做鉴权、路由、协议转发，不承载业务实现。
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// 步骤 1：基础健康检查与公开配置。
-	mux.HandleFunc("/healthz", h.healthz)
 	mux.HandleFunc("/v1/public/config", h.publicConfig)
 
 	// 步骤 2：按声明式路由表注册反向代理（见 internal/gateway/routes/routes.go）。
@@ -88,15 +103,6 @@ func (h *Handler) websocketPlaceholder(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusNotImplemented, traceID, errcode.WebSocketNotImplemented, errcode.MsgWebSocketNotImplemented, nil)
 }
 
-// healthz 返回网关健康状态。
-func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
-	// 步骤 1：生成/透传 traceID，便于诊断链路。
-	traceID := httpx.EnsureTraceID(r)
-
-	// 步骤 2：输出统一响应结构。
-	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, vo.HealthResp{Service: "gateway-service"})
-}
-
 // publicConfig 返回前端启动所需的公开配置。
 func (h *Handler) publicConfig(w http.ResponseWriter, r *http.Request) {
 	// 步骤 1：准备 traceID 并返回静态配置。
@@ -116,8 +122,7 @@ func (h *Handler) proxyToService(route routes.ProxyRoute) http.HandlerFunc {
 		// 步骤 2：透传 query 参数，避免筛选条件丢失。
 		target = appendRawQuery(target, r)
 
-		// 步骤 3：执行统一代理。
-		h.proxy(w, r, target)
+		h.proxy(w, r, route.ServiceName, target)
 	}
 }
 
@@ -132,8 +137,7 @@ func (h *Handler) proxyPrefixToService(route routes.ProxyRoute) http.HandlerFunc
 		// 步骤 2：透传 query 参数。
 		target = appendRawQuery(target, r)
 
-		// 步骤 3：执行统一代理。
-		h.proxy(w, r, target)
+		h.proxy(w, r, route.ServiceName, target)
 	}
 }
 
@@ -143,8 +147,9 @@ func (h *Handler) serviceFallbackURL(serviceName string) string {
 	case "member-service":
 		return h.memberURL
 	case "order-service":
-		// 步骤 1：order 回退至配置的 OrderServiceURL。
 		return h.orderURL
+	case "payment-service":
+		return h.paymentURL
 	default:
 		return ""
 	}
@@ -166,7 +171,7 @@ func appendRawQuery(target string, r *http.Request) string {
 // - 构造下游请求
 // - 透传关键头
 // - 回写下游响应
-func (h *Handler) proxy(w http.ResponseWriter, r *http.Request, target string) {
+func (h *Handler) proxy(w http.ResponseWriter, r *http.Request, serviceName, target string) {
 	// 步骤 1：准备 traceID 并读取原始请求体。
 	traceID := httpx.EnsureTraceID(r)
 	body, _ := ioReadAll(r.Body)
@@ -181,8 +186,13 @@ func (h *Handler) proxy(w http.ResponseWriter, r *http.Request, target string) {
 	// 步骤 3：复制关键请求头，保持鉴权与链路信息完整。
 	copyHeaders(req, r, traceID)
 
-	// 步骤 4：调用下游服务。
-	resp, err := h.httpClient.Do(req)
+	// 步骤 4：调用下游服务（可选断路器）。
+	var resp *http.Response
+	err = h.executeProxy(serviceName, func() error {
+		var doErr error
+		resp, doErr = h.httpClient.Do(req)
+		return doErr
+	})
 	if err != nil {
 		httpx.JSON(w, http.StatusBadGateway, traceID, errcode.DownstreamUnavailable, errcode.MsgDownstreamUnavailable, nil)
 		return
@@ -207,6 +217,7 @@ func copyHeaders(req *http.Request, src *http.Request, traceID string) {
 	// 步骤 2：透传幂等键与用户上下文。
 	req.Header.Set("X-Idempotency-Key", src.Header.Get("X-Idempotency-Key"))
 	req.Header.Set("X-User-Id", src.Header.Get("X-User-Id"))
+	req.Header.Set("X-User-Role", src.Header.Get("X-User-Role"))
 
 	// 步骤 3：统一写入网关 traceID，保证链路可追踪。
 	req.Header.Set("X-Trace-Id", traceID)
@@ -230,15 +241,18 @@ func (h *Handler) withAuth(next http.Handler) http.Handler {
 		}
 
 		// 步骤 3：调用鉴权器校验 token 并获取 userID。
-		userID, err := h.authenticator.Introspect(r.Context(), token, traceID)
+		auth, err := h.authenticator.Introspect(r.Context(), token, traceID)
 		if err != nil {
 			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.TokenInvalid, errcode.MsgTokenInvalid, nil)
 			return
 		}
+		if !checkRequiredRoles(r.URL.Path, auth.Role, w, r) {
+			return
+		}
 
-		// 步骤 4：克隆请求并注入用户上下文，继续后续处理链。
 		cloned := r.Clone(r.Context())
-		cloned.Header.Set("X-User-Id", userID)
+		cloned.Header.Set("X-User-Id", auth.UserID)
+		cloned.Header.Set("X-User-Role", auth.Role)
 		next.ServeHTTP(w, cloned)
 	})
 }

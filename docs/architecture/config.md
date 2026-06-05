@@ -12,6 +12,8 @@
 
 ## 环境变量（configs/.env）
 
+**模板与同步**：[`configs/.env.example`](../../configs/.env.example) 为唯一模板；复制或更新时 **`configs/.env` 须保留相同分组 `#` 注释**（只改值、不删注释）。详见规则 `.cursor/rules/config-env.mdc`。
+
 | 变量 | 说明 | 默认 |
 |------|------|------|
 | `GATEWAY_SERVICE_PORT` | 网关 HTTP 端口 | 8180 |
@@ -37,6 +39,15 @@
 | `CONSUL_DATACENTER` | Consul DC | dc1 |
 | `SERVICE_HOST` | 注册到 Consul 的 host | 127.0.0.1 |
 | `CORS_ALLOW_ORIGIN` | 跨域 Allow-Origin | http://localhost:5173 |
+| `PAYMENT_SERVICE_PORT` | payment HTTP 端口 | 8183 |
+| `PAYMENT_SERVICE_URL` | 网关回退 payment 基址 | http://127.0.0.1:8183 |
+| `PAYMENT_MOCK_PAY_ENABLED` | 是否开放 mock-pay | true（dev） |
+| `LOG_LEVEL` / `LOG_FORMAT` | slog 级别与 json/text | info / json |
+| `OTEL_ENABLED` | 是否启用 OpenTelemetry | false |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP 地址（如 jaeger:4318） | — |
+| `RATE_LIMIT_ENABLED` | 网关 Redis 限流 | false |
+| `RATE_LIMIT_REDIS_PREFIX` | 限流 Redis 键前缀 | ratelimit |
+| `GATEWAY_PROXY_TIMEOUT_SEC` | 网关代理超时（秒） | 5 |
 
 模板 **仅包含代码会读取的变量**；勿在 `.env` 添加未实现功能的键。
 

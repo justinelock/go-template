@@ -22,4 +22,6 @@ type UserRepository interface {
 	Create(ctx context.Context, req domain.RegisterReq, hashedPassword string) (string, error)
 	// UpdateProfile 更新用户资料字段（部分更新）。
 	UpdateProfile(ctx context.Context, userID string, req domain.UpdateMeReq) error
+	// UpdatePassword 更新用户密码哈希。
+	UpdatePassword(ctx context.Context, userID, hashedPassword string) error
 }

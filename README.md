@@ -1,6 +1,6 @@
 # go-template
 
-Go **微服务框架模版**：`gateway-service` + `member-service` + `order-service`（Demo）骨架，统一 API 规范、网关鉴权、分层结构与协作文档，fork 后可按 playbook 扩展业务服务。
+Go **微服务框架模版**：`gateway-service` + `member-service` + `order-service` + `payment-service` 骨架，含 SMB 生产基线（日志/指标/就绪探针/限流/安全），fork 后可按 playbook 扩展业务服务。
 
 ## 适用场景
 
@@ -12,7 +12,8 @@ Go **微服务框架模版**：`gateway-service` + `member-service` + `order-ser
 
 - `gateway-service` (`:8180`)：统一 HTTP 入口，CORS、鉴权、反向代理（无业务逻辑）。
 - `member-service` (`:8181`，gRPC `:9181`)：注册、登录、登出、token introspect、用户资料。
-- `order-service` (`:8182`)：订单 Demo（Redis 幂等/锁 + RabbitMQ 异步结算），见 [order-demo.md](docs/architecture/order-demo.md)。
+- `order-service` (`:8182`)：订单 Demo（Redis 幂等/锁 + MQ 支付/结算），见 [order-demo.md](docs/architecture/order-demo.md)。
+- `payment-service` (`:8183`)：支付 Demo（mock-pay + 回调占位），见 [payment-demo.md](docs/architecture/payment-demo.md)。
 
 ## 目录结构
 
@@ -21,6 +22,7 @@ cmd/
   gateway-service/     # 网关入口
   member-service/      # 业务服务入口
   order-service/       # 订单 Demo 入口
+  payment-service/     # 支付 Demo 入口
 internal/
   gateway/             # 鉴权、代理、路由表
   member/              # transport → app → repo → domain
@@ -76,12 +78,14 @@ make smoke
 - `POST /v1/auth/register`
 - `POST /v1/auth/login`
 - `POST /v1/auth/logout`
+- `POST /v1/auth/refresh`
 - `GET /v1/member/users/profile`
 - `PUT /v1/member/users/profile`
 - `POST /v1/order/orders`（需鉴权 + `X-Idempotency-Key`）
 - `GET /v1/order/orders/{id}`（需鉴权）
+- `POST /v1/payment/payments`、`POST /v1/payment/payments/{id}/mock-pay`（需鉴权，mock 仅 dev）
 
-完整约定见 [docs/api/README.md](docs/api/README.md)。
+完整约定见 [docs/api/README.md](docs/api/README.md)。生产基线见 [production-baseline.md](docs/architecture/production-baseline.md)。
 
 ## 文档索引
 
@@ -109,4 +113,5 @@ BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
 | 版本 | 内容 |
 |------|------|
 | **v0.2** | 架构文档、docker-compose、errcode、网关路由表、单元测试 |
-| **v0.3**（进行中） | order-service Demo、RabbitMQ、OpenAPI、结构化日志（GitHub Actions CI，默认手动触发） |
+| **v0.3** | order-service Demo、RabbitMQ、CI（默认手动触发） |
+| **v0.4–v0.5** | 可观测/治理/安全基线、payment-service、OpenAPI 骨架 |

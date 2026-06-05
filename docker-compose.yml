@@ -43,6 +43,7 @@ services:
       APP_ENV: dev
       CONFIG_FILE: configs/app.dev.json
       SERVICE_HOST: member-service
+      LOG_FORMAT: json
     ports:
       - "8181:8181"
       - "9181:9181"
@@ -51,6 +52,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8181/readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   order-service:
     build: .
@@ -59,6 +65,7 @@ services:
       APP_ENV: dev
       CONFIG_FILE: configs/app.dev.json
       SERVICE_HOST: order-service
+      LOG_FORMAT: json
     ports:
       - "8182:8182"
     depends_on:
@@ -68,6 +75,33 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8182/readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  payment-service:
+    build: .
+    command: ["/srv/bin/payment-service"]
+    environment:
+      APP_ENV: dev
+      CONFIG_FILE: configs/app.dev.json
+      SERVICE_HOST: payment-service
+      LOG_FORMAT: json
+      PAYMENT_MOCK_PAY_ENABLED: "true"
+    ports:
+      - "8183:8183"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8183/readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   gateway-service:
     build: .
@@ -75,8 +109,44 @@ services:
     environment:
       APP_ENV: dev
       CONFIG_FILE: configs/app.dev.json
+      LOG_FORMAT: json
+      RATE_LIMIT_ENABLED: "false"
     ports:
       - "8180:8180"
     depends_on:
-      - member-service
-      - order-service
+      member-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8180/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  prometheus:
+    profiles: ["obs"]
+    image: prom/prometheus:v2.55.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/obs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    profiles: ["obs"]
+    image: grafana/grafana:11.4.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  jaeger:
+    profiles: ["obs"]
+    image: jaegertracing/all-in-one:1.64.0
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"

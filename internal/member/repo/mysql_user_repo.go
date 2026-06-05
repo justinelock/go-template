@@ -12,7 +12,9 @@ import (
 	"go-template/internal/member/domain"
 )
 
+// MySQLUserRepo 基于 MySQL users 表的用户仓储实现。
 type MySQLUserRepo struct {
+	// 步骤 1：MySQL 连接池。
 	db *sql.DB
 }
 
@@ -57,9 +59,9 @@ func (r *MySQLUserRepo) Create(ctx context.Context, req domain.RegisterReq, hash
 	res, err := r.db.ExecContext(ctx, `
 		INSERT INTO users(
 			username, password, email, mobile, nickname, parent_id, invite_code,
-			avatar, remark, created_at, updated_at
+			avatar, remark, role, created_at, updated_at
 		)
-		VALUES (?, ?, NULLIF(?,''), ?, NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), ?, ?)
+		VALUES (?, ?, NULLIF(?,''), ?, NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), NULLIF(?,''), 'user', ?, ?)
 	`, req.Username, hashedPassword, req.Email, req.Mobile, req.Nickname, req.ParentID, req.InviteCode, req.Avatar, req.Remark, now, now)
 	if err != nil {
 		return "", err
@@ -89,12 +91,19 @@ func (r *MySQLUserRepo) UpdateProfile(ctx context.Context, userID string, req do
 	return err
 }
 
+func (r *MySQLUserRepo) UpdatePassword(ctx context.Context, userID, hashedPassword string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE users SET password = ?, updated_at = ? WHERE id = CAST(? AS UNSIGNED)
+	`, hashedPassword, time.Now().UTC(), userID)
+	return err
+}
+
 func selectUserSQL(where string) string {
 	return fmt.Sprintf(`
 		SELECT CAST(id AS CHAR), username, password,
 		       COALESCE(email,''), mobile, COALESCE(nickname,''),
 		       COALESCE(CAST(parent_id AS CHAR), ''), level, COALESCE(invite_code,''),
-		       COALESCE(status, 0), verified, COALESCE(avatar,''), COALESCE(remark,''),
+		       COALESCE(status, 0), verified, COALESCE(avatar,''), COALESCE(remark,''), COALESCE(role,'user'),
 		       DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s'),
 		       COALESCE(DATE_FORMAT(updated_at, '%%Y-%%m-%%d %%H:%%i:%%s'), '')
 		FROM users
@@ -122,6 +131,7 @@ func scanUser(row *sql.Row) (*domain.UserRecord, error) {
 		&verified,
 		&user.Avatar,
 		&user.Remark,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	); err != nil {

@@ -25,4 +25,6 @@ type Bus interface {
 	Subscribe(ctx context.Context, topic, group string, handler Handler) error
 	// Close 释放连接与消费者。
 	Close() error
+	// Ping 用于就绪探针。
+	Ping() error
 }

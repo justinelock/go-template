@@ -51,9 +51,21 @@ type updateMeReq struct {
 }
 
 // introspectResp token 反查结果响应体。
+// introspectResp token 反查结果（含 role 供网关 RBAC）。
 type introspectResp struct {
 	UserID       string `json:"userId"`
 	UserIDLegacy string `json:"user_id,omitempty"`
+	Role         string `json:"role"`
+}
+
+// refreshReq 刷新 token 请求体。
+type refreshReq struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+// logoutReq 登出请求体（可选携带 refreshToken 一并失效）。
+type logoutReq struct {
+	RefreshToken string `json:"refreshToken"`
 }
 
 // NewHandler 构造 member HTTP 处理器。
@@ -65,20 +77,13 @@ func NewHandler(svc *memberapp.Service) *Handler {
 // RegisterRoutes 注册 member-service 对外 HTTP 路由。
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	// 步骤 1：注册健康检查与认证相关路由。
-	mux.HandleFunc("/healthz", h.healthz)
 	mux.HandleFunc("/v1/auth/login", h.login)
 	mux.HandleFunc("/v1/auth/register", h.register)
 	mux.HandleFunc("/v1/auth/logout", h.logout)
+	mux.HandleFunc("/v1/auth/refresh", h.refresh)
 	mux.HandleFunc("/v1/auth/introspect", h.introspect)
 	// 步骤 2：注册用户资料路由。
 	mux.HandleFunc("/v1/users/profile", h.profile)
-}
-
-// healthz 返回 member 服务健康状态。
-func (h *Handler) healthz(w http.ResponseWriter, r *http.Request) {
-	// 步骤 1：生成 traceID 并输出统一响应。
-	traceID := httpx.EnsureTraceID(r)
-	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, map[string]string{"service": "member-service"})
 }
 
 // login 处理登录请求。
@@ -190,8 +195,11 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var body logoutReq
+	_ = json.NewDecoder(r.Body).Decode(&body)
+
 	// 步骤 2：调用 app 层执行 token 失效。
-	if err := h.svc.Logout(r.Context(), token); err != nil {
+	if err := h.svc.Logout(r.Context(), token, body.RefreshToken); err != nil {
 		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.LogoutFailed, errcode.MsgLogoutFailed, nil)
 		return
 	}
@@ -217,8 +225,8 @@ func (h *Handler) introspect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 步骤 2：调用 app 层反查 userID。
-	userID, err := h.svc.IntrospectToken(r.Context(), token)
+	// 步骤 2：调用 app 层反查 userID 与 role。
+	result, err := h.svc.Introspect(r.Context(), token)
 	if err != nil {
 		// 步骤 3：映射 token 无效与内部异常。
 		if errors.Is(err, domain.ErrTokenInvalid) {
@@ -231,9 +239,38 @@ func (h *Handler) introspect(w http.ResponseWriter, r *http.Request) {
 
 	// 步骤 4：返回反查结果。
 	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, introspectResp{
-		UserID:       userID,
-		UserIDLegacy: userID,
+		UserID:       result.UserID,
+		UserIDLegacy: result.UserID,
+		Role:         result.Role,
 	})
+}
+
+// refresh 使用 refreshToken 换取新的 access/refresh token 对。
+func (h *Handler) refresh(w http.ResponseWriter, r *http.Request) {
+	// 步骤 1：校验方法与 traceID。
+	traceID := httpx.EnsureTraceID(r)
+	if r.Method != http.MethodPost {
+		httpx.JSON(w, http.StatusMethodNotAllowed, traceID, errcode.MethodNotAllowed, errcode.MsgMethodNotAllowed, nil)
+		return
+	}
+	// 步骤 2：解析 refreshToken。
+	var req refreshReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.JSON(w, http.StatusBadRequest, traceID, errcode.BadRequestBody, errcode.MsgInvalidRequestBody, nil)
+		return
+	}
+	// 步骤 3：调用 app 轮换 token。
+	data, err := h.svc.Refresh(r.Context(), req.RefreshToken)
+	if err != nil {
+		// 步骤 4：映射 refresh 无效。
+		if errors.Is(err, domain.ErrTokenInvalid) || errors.Is(err, domain.ErrTokenRequired) {
+			httpx.JSON(w, http.StatusUnauthorized, traceID, errcode.RefreshTokenInvalid, errcode.MsgRefreshTokenInvalid, nil)
+			return
+		}
+		httpx.JSON(w, http.StatusInternalServerError, traceID, errcode.LoginFailed, errcode.MsgLoginFailed, nil)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, data)
 }
 
 // usersMe 处理用户资料查询/更新。

@@ -37,6 +37,7 @@ CREATE TABLE `users`
     `verified`    tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否已实名认证：0-未认证 1-已认证',
     `avatar`      text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT '用户头像(base64)',
     `remark`      varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci          DEFAULT NULL COMMENT '说明',
+    `role`        varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci  NOT NULL DEFAULT 'user' COMMENT '角色 user/admin',
     `created_at`  datetime                                                      NOT NULL COMMENT '创建时间',
     `updated_at`  datetime                                                               DEFAULT NULL COMMENT '更新时间',
     PRIMARY KEY (`id`),
@@ -63,13 +64,31 @@ CREATE TABLE `orders`
     `user_id`          bigint         NOT NULL COMMENT '用户ID',
     `product_id`       varchar(64)    NOT NULL COMMENT '商品ID',
     `amount`           decimal(12, 2) NOT NULL COMMENT '金额',
-    `status`           tinyint        NOT NULL DEFAULT '0' COMMENT '0-pending 1-settled',
+    `status`           tinyint        NOT NULL DEFAULT '0' COMMENT '0-pending_payment 1-paid 2-settled',
     `idempotency_key`  varchar(128)   NOT NULL COMMENT '幂等键',
     `created_at`       datetime       NOT NULL COMMENT '创建时间',
     `updated_at`       datetime                DEFAULT NULL COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_user_idempotency` (`user_id`, `idempotency_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='订单表';
+
+-- ----------------------------
+-- Table structure for payments
+-- ----------------------------
+DROP TABLE IF EXISTS `payments`;
+CREATE TABLE `payments`
+(
+    `id`         bigint         NOT NULL AUTO_INCREMENT COMMENT '支付ID',
+    `order_id`   bigint         NOT NULL COMMENT '订单ID',
+    `user_id`    bigint         NOT NULL COMMENT '用户ID',
+    `amount`     decimal(12, 2) NOT NULL COMMENT '金额',
+    `status`     tinyint        NOT NULL DEFAULT '0' COMMENT '0-pending 1-paid',
+    `channel`    varchar(32)             DEFAULT NULL COMMENT '支付渠道',
+    `created_at` datetime       NOT NULL COMMENT '创建时间',
+    `updated_at` datetime                DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_order_id` (`order_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='支付表';
 
 SET
 FOREIGN_KEY_CHECKS = 1;

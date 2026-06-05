@@ -1,0 +1,32 @@
+---
+description: configs/.env 与 .env.example 同步规范（含注释）
+globs:
+  - configs/**
+  - internal/platform/config/**
+---
+
+# 环境变量文件规范
+
+## 文件职责
+
+| 文件 | 用途 |
+|------|------|
+| `configs/.env.example` | 模板：键、分组注释、占位值；**可提交** |
+| `configs/.env` | 本地开发实际值；**与 example 保持相同分组与注释**；可提交 dev 占位密码 |
+
+## 同步规则（必须）
+
+1. **改 `configs/.env.example` 时，同步更新 `configs/.env`**：键齐全、**分组 `#` 注释一致**（仅值可不同）。
+2. **禁止**把 `.env` 收成「纯键值无注释」；注释是文档的一部分。
+3. 新增环境变量：先加 `internal/platform/config/config.go` 读取逻辑，再写 example → 同步 `.env` → 更新 `docs/architecture/config.md` 表格。
+4. 可选键用 `# KEY=value` 注释行保留在 **两个文件** 中。
+
+## 注释格式
+
+- 文件头：说明用途与加载顺序
+- 分组：`# --- 分组名 ---`
+- 行内/块上：说明 dev/prod 差异、依赖关系（如 `RATE_LIMIT_ENABLED` 需 Redis）
+
+## 代码同步
+
+改配置相关代码时，新增/修改的 **Go 类型、字段、函数** 须按 `docs/conventions/code-comments.md` 补全 `// 步骤 N：` 注释，不得只提交无注释的新文件。

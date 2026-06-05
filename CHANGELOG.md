@@ -8,6 +8,11 @@
 
 ### Changed
 
+- **configs/.env.example / configs/.env**：恢复并统一分组 `#` 注释；约定同步时不得剥离注释（见 `config-env.mdc`）。
+- **步骤级注释补全**：为 v0.4–v0.5 新增 platform/payment/gateway/member/order 等包补全类型、字段与函数体 `// 步骤 N：` 注释。
+- **order-service**：订单状态机 `pending_payment → paid → settled`；下单发 `payment.created`，支付后发 `order.settle`。
+- **member-service**：密码 bcrypt + MD5 懒升级；refresh token 实装；`users.role` 简易 RBAC。
+- **gateway-service**：限流、代理超时、断路器、RBAC（`X-User-Role`）、payment 路由。
 - **GitHub Actions CI**：改为默认仅 `workflow_dispatch` 手动触发，不再 push/PR 自动运行；增强 compose 健康等待与 smoke 脚本权限。
 - **Dockerfile**：构建镜像 `golang:1.25` → `1.26`，与 `go.mod` 一致（修复 compose 构建失败）。
 - **步骤级注释**：为 order-service、platform（redislock/idempotency/mq）、网关 order 路由及 smoke 脚本补充步骤注释，对齐 `docs/conventions/code-comments.md`。
@@ -15,6 +20,12 @@
 
 ### Added
 
+- **payment-service**：支付 Demo（MQ 建单、mock-pay、回调占位、`payment.paid`）。
+- **platform 可观测**：`logging`、`health`（`/readyz`）、`metrics`、`otel`、`httpserver` 中间件链、`runtime` 优雅关闭。
+- **platform 治理**：`ratelimit`、`gatewayresilience`（gobreaker）、`httpx` recovery。
+- **docs/architecture/observability.md**、**security.md**、**payment-demo.md**、**production-baseline.md**。
+- **api/openapi.yaml**：核心路径骨架。
+- **scripts/smoke-payment-flow.sh**；Compose `payment-service` 与 `--profile obs`（Prometheus/Grafana/Jaeger）。
 - **docs/architecture/mq.md**：MQ 使用指南（RabbitMQ/RocketMQ 接入、配置、手动建资源、order Demo 用法）。
 - **internal/platform/mq/rocketmq.go**：RocketMQ `Bus` 实现。
 - **internal/order/mq/publisher.go**：结算消息发布适配层。

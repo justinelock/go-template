@@ -1,6 +1,6 @@
 # 架构总览
 
-go-template 是微服务模版：**gateway-service** 对外，**member-service** 承载用户域，**order-service** 为订单高并发 Demo。
+go-template 是微服务模版：**gateway-service** 对外，**member-service** 用户域，**order-service** + **payment-service** 订单支付 Demo，含 SMB 生产基线。
 
 ## 拓扑
 
@@ -9,12 +9,15 @@ flowchart LR
   Client --> Gateway[gateway_service_8180]
   Gateway -->|HTTP proxy| MemberHTTP[member_http_8181]
   Gateway -->|HTTP proxy| OrderHTTP[order_http_8182]
+  Gateway -->|HTTP proxy| PaymentHTTP[payment_http_8183]
   Gateway -->|gRPC introspect| MemberGRPC[member_grpc_9181]
   MemberHTTP --> MySQL[(MySQL)]
   MemberHTTP --> Redis[(Redis)]
   OrderHTTP --> MySQL
   OrderHTTP --> Redis
   OrderHTTP --> RabbitMQ[(RabbitMQ)]
+  PaymentHTTP --> MySQL
+  PaymentHTTP --> RabbitMQ
   Gateway -.->|optional| Consul[Consul]
 ```
 
@@ -25,6 +28,7 @@ flowchart LR
 | gateway-service | 8180 | — |
 | member-service | 8181 | 9181 |
 | order-service | 8182 | — |
+| payment-service | 8183 | — |
 
 ## 依赖
 
@@ -52,6 +56,10 @@ flowchart LR
 | [order-demo.md](order-demo.md) | 订单 Demo（Redis/MQ 高并发示例） |
 | [redis-high-concurrency.md](redis-high-concurrency.md) | **Redis 高并发**：分布式锁、幂等、场景示例 |
 | [mq.md](mq.md) | **MQ 统一 Bus**：RabbitMQ/RocketMQ 切换、配置、Demo 用法 |
+| [observability.md](observability.md) | 日志、指标、就绪探针、OTel |
+| [security.md](security.md) | bcrypt、refresh、RBAC、Secrets |
+| [payment-demo.md](payment-demo.md) | 支付 Demo 流程 |
+| [production-baseline.md](production-baseline.md) | 中小型生产清单 |
 
 ## 对外原则
 

@@ -7,6 +7,7 @@ build:
 	go build -o ./bin/gateway-service ./cmd/gateway-service
 	go build -o ./bin/member-service ./cmd/member-service
 	go build -o ./bin/order-service ./cmd/order-service
+	go build -o ./bin/payment-service ./cmd/payment-service
 
 dev:
 	@bash scripts/dev-up.sh
@@ -26,6 +27,7 @@ test:
 smoke:
 	@bash scripts/smoke-auth-flow.sh
 	@bash scripts/smoke-order-flow.sh
+	@bash scripts/smoke-payment-flow.sh
 
 tidy:
 	go mod tidy

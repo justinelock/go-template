@@ -9,10 +9,13 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
+// Consul 封装 HashiCorp Consul 服务注册与发现。
 type Consul struct {
+	// 步骤 1：Consul API 客户端。
 	client *api.Client
 }
 
+// NewConsul 按地址与数据中心创建 Consul 客户端。
 func NewConsul(address, datacenter string) (*Consul, error) {
 	cfg := api.DefaultConfig()
 	cfg.Address = address

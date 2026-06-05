@@ -3,8 +3,10 @@ package domain
 import "errors"
 
 const (
-	// StatusPending 订单已创建，等待异步结算。
-	StatusPending = "pending"
+	// StatusPendingPayment 订单已创建，等待支付。
+	StatusPendingPayment = "pending_payment"
+	// StatusPaid 订单已支付，等待结算。
+	StatusPaid = "paid"
 	// StatusSettled 订单已结算完成。
 	StatusSettled = "settled"
 )

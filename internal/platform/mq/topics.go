@@ -4,8 +4,12 @@ import "fmt"
 
 // 逻辑 Topic / ConsumerGroup（业务与文档统一使用，勿写死 Rabbit/Rocket 物理名）。
 const (
-	TopicOrderSettle     = "order.settle"
-	GroupOrderSettlement = "order-settlement"
+	TopicOrderSettle      = "order.settle"
+	GroupOrderSettlement  = "order-settlement"
+	TopicPaymentCreated   = "payment.created"
+	GroupPaymentCreator   = "payment-creator"
+	TopicPaymentPaid      = "payment.paid"
+	GroupOrderPaymentPaid = "order-payment-paid"
 )
 
 // Rabbit 物理资源（Exchange + Queue + RoutingKey）。
@@ -13,18 +17,23 @@ const (
 	rabbitDemoExchange = "go_template.demo"
 )
 
+// rabbitTopicMapping 逻辑 Topic 到 RabbitMQ queue/routingKey 的映射。
 type rabbitTopicMapping struct {
 	queue      string
 	routingKey string
 }
 
 var rabbitMappings = map[string]rabbitTopicMapping{
-	TopicOrderSettle: {queue: "order.settle", routingKey: "order.settle"},
+	TopicOrderSettle:    {queue: "order.settle", routingKey: "order.settle"},
+	TopicPaymentCreated: {queue: "payment.created", routingKey: "payment.created"},
+	TopicPaymentPaid:    {queue: "payment.paid", routingKey: "payment.paid"},
 }
 
 // rocket 逻辑 Topic -> RocketMQ Topic 名（建议下划线）。
 var rocketTopicNames = map[string]string{
-	TopicOrderSettle: "order_settle",
+	TopicOrderSettle:    "order_settle",
+	TopicPaymentCreated: "payment_created",
+	TopicPaymentPaid:    "payment_paid",
 }
 
 // RabbitExchange 返回 RabbitMQ exchange 名。
