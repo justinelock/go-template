@@ -61,4 +61,4 @@ make test
 make smoke
 ```
 
-v0.3 将增加 GitHub Actions 自动执行上述检查。
+GitHub Actions 已自动执行 `go test`、`go build` 与 compose 冒烟检查，合并前仍建议本地先跑一次 `make test && make smoke`。

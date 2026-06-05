@@ -103,4 +103,4 @@ BASE_URL=http://127.0.0.1:8180 ./scripts/smoke-auth-flow.sh
 | 版本 | 内容 |
 |------|------|
 | **v0.2**（当前） | 架构文档、docker-compose、errcode、网关路由表、单元测试 |
-| v0.3 | GitHub Actions CI、OpenAPI、结构化日志、RabbitMQ 示例 |
+| v0.3 | OpenAPI、结构化日志、RabbitMQ 示例（GitHub Actions CI 已接入） |

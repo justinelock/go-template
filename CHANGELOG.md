@@ -6,7 +6,13 @@
 
 ## [Unreleased]
 
-（暂无）
+### Added
+
+- **GitHub Actions CI**：新增 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，包含 `test-and-build` 与 `compose-smoke` 两个 job。
+
+### Removed
+
+- **docs/02-api/**：物理删除重复 API 文档目录，仅保留 `docs/api/` 作为唯一来源。
 
 ## [0.2.0] - 2026-06-04
 
