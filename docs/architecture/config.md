@@ -10,10 +10,6 @@
 
 实现：[`internal/platform/config/config.go`](../../internal/platform/config/config.go)
 
-带注释的变量模板：[`configs/.env.example`](../../configs/.env.example)。JSON 字段说明：[`configs/README.md`](../../configs/README.md)。
-
-**维护**：修改 `.env.example` 时必须同步 [`configs/.env`](../../configs/.env)（见 `.cursor/rules/config-env.mdc`）。
-
 ## 环境变量（configs/.env）
 
 | 变量 | 说明 | 默认 |

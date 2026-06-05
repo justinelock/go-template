@@ -8,8 +8,6 @@
 
 ### Changed
 
-- **configs/.env.example**：分组注释说明各环境变量；新增同步的 **configs/.env**。
-- **配置协作**：新增 `configs/README.md`、规则 `config-env.mdc`；`code-change` Skill 与 `AGENTS.md` 要求 example 与 `.env` 同步。
 - **步骤级注释**：为 order-service、platform（redislock/idempotency/mq）、网关 order 路由及 smoke 脚本补充步骤注释，对齐 `docs/conventions/code-comments.md`。
 - **internal/platform/mq**：重构为统一 `Bus` 接口；`MQ_PROVIDER` 配置切换（默认 rabbitmq）；order-service 经 `order/mq.SettlePublisher` 适配，业务不依赖具体 MQ。
 

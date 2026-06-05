@@ -7,7 +7,6 @@
 | [`architecture/`](architecture/README.md) | 服务拓扑、配置、本地开发、Redis/MQ、新增服务 playbook | 已维护 |
 | [`api/`](api/README.md) | HTTP / gRPC / WebSocket API 规范 | 已维护 |
 | [`conventions/`](conventions/code-comments.md) | 步骤级注释等开发约定 | 已维护 |
-| [`configs/README.md`](../configs/README.md) | 环境变量与 JSON 配置字段说明 | 已维护 |
 
 根目录 [`CHANGELOG.md`](../CHANGELOG.md)：每次代码/配置/文档变更须更新。
 
