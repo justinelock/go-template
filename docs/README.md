@@ -4,7 +4,7 @@
 
 | 目录 | 说明 | 状态 |
 |------|------|------|
-| [`architecture/`](architecture/README.md) | 服务拓扑、配置、本地开发、Redis 高并发、新增服务 playbook | 已维护 |
+| [`architecture/`](architecture/README.md) | 服务拓扑、配置、本地开发、Redis/MQ、新增服务 playbook | 已维护 |
 | [`api/`](api/README.md) | HTTP / gRPC / WebSocket API 规范 | 已维护 |
 | [`conventions/`](conventions/code-comments.md) | 步骤级注释等开发约定 | 已维护 |
 

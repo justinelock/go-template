@@ -80,7 +80,7 @@ echo "[1/3] start gateway-service :${GATEWAY_SERVICE_PORT}"
 echo "[2/3] start member-service :${MEMBER_SERVICE_PORT} grpc :${MEMBER_SERVICE_GRPC_PORT}"
 ./bin/member-service > ./logs/member-service.log 2>&1 &
 
-# 步骤 5：后台启动 order-service（需本机 RabbitMQ 可用）。
+# 步骤 5：后台启动 order-service（默认 MQ_PROVIDER=rabbitmq，需本机 RabbitMQ；RocketMQ 见 docs/architecture/mq.md）。
 echo "[3/3] start order-service :${ORDER_SERVICE_PORT}"
 ./bin/order-service > ./logs/order-service.log 2>&1 &
 

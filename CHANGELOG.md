@@ -9,9 +9,13 @@
 ### Changed
 
 - **步骤级注释**：为 order-service、platform（redislock/idempotency/mq）、网关 order 路由及 smoke 脚本补充步骤注释，对齐 `docs/conventions/code-comments.md`。
+- **internal/platform/mq**：重构为统一 `Bus` 接口；`MQ_PROVIDER` 配置切换（默认 rabbitmq）；order-service 经 `order/mq.SettlePublisher` 适配，业务不依赖具体 MQ。
 
 ### Added
 
+- **docs/architecture/mq.md**：MQ 使用指南（RabbitMQ/RocketMQ 接入、配置、手动建资源、order Demo 用法）。
+- **internal/platform/mq/rocketmq.go**：RocketMQ `Bus` 实现。
+- **internal/order/mq/publisher.go**：结算消息发布适配层。
 - **docs/architecture/redis-high-concurrency.md**：Redis 高并发使用指南（Redisson 概念对照、分布式锁、幂等、多业务场景示例）。
 - **order-service Demo**：Redis 幂等/分布式锁 + RabbitMQ 异步结算；平台包 `redislock`、`idempotency`、`mq`。
 - **docs/architecture/order-demo.md**：订单 Demo 流程与 curl 示例。

@@ -11,7 +11,6 @@ import (
 	"go-template/internal/order/repo"
 	"go-template/internal/order/vo"
 	"go-template/internal/platform/idempotency"
-	"go-template/internal/platform/mq"
 	"go-template/internal/platform/redislock"
 
 	"github.com/go-redis/redis/v8"
@@ -142,6 +141,3 @@ func (s *Service) SettleOrder(ctx context.Context, orderID string) error {
 	// 步骤 1：更新 MySQL 状态为 settled。
 	return s.orders.MarkSettled(ctx, strings.TrimSpace(orderID))
 }
-
-// EnsurePublisher 类型断言 helper，供 main 使用。
-var _ Publisher = (*mq.Client)(nil)

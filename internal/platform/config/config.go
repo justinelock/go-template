@@ -29,8 +29,14 @@ type AppConfig struct {
 	RedisPassword string `json:"redis_password"`
 	RedisDB       int    `json:"redis_db"`
 
-	// RabbitMQURL AMQP 连接串（order-service 结算 Demo）。
+	// MQProvider 消息实现：rabbitmq（默认）或 rocketmq。
+	MQProvider string `json:"mq_provider"`
+	// MQAutoDeclare dev 下自动声明 Rabbit exchange/queue（Rocket 依赖 Broker 自动建 Topic）。
+	MQAutoDeclare bool `json:"mq_auto_declare"`
+	// RabbitMQURL AMQP 连接串（mq_provider=rabbitmq 时必填）。
 	RabbitMQURL string `json:"rabbitmq_url"`
+	// RocketMQNameSrv NameServer 地址（mq_provider=rocketmq 时必填）。
+	RocketMQNameSrv string `json:"rocketmq_namesrv"`
 
 	CORSAllowOrigin string `json:"cors_allow_origin"`
 
@@ -87,7 +93,10 @@ func defaultConfig() *AppConfig {
 		RedisPassword: "",
 		RedisDB:       0,
 
-		RabbitMQURL: "amqp://guest:guest@127.0.0.1:5672/",
+		MQProvider:      "rabbitmq",
+		MQAutoDeclare:   true,
+		RabbitMQURL:     "amqp://guest:guest@127.0.0.1:5672/",
+		RocketMQNameSrv: "127.0.0.1:9876",
 
 		CORSAllowOrigin: "http://localhost:5173",
 
@@ -197,8 +206,16 @@ func merge(dst, src *AppConfig) {
 	if src.RedisDB != 0 {
 		dst.RedisDB = src.RedisDB
 	}
+	if src.MQProvider != "" {
+		dst.MQProvider = src.MQProvider
+		// 配置文件显式声明 mq_provider 时，同步采纳 mq_auto_declare（含 false）。
+		dst.MQAutoDeclare = src.MQAutoDeclare
+	}
 	if src.RabbitMQURL != "" {
 		dst.RabbitMQURL = src.RabbitMQURL
+	}
+	if src.RocketMQNameSrv != "" {
+		dst.RocketMQNameSrv = src.RocketMQNameSrv
 	}
 	if src.CORSAllowOrigin != "" {
 		dst.CORSAllowOrigin = src.CORSAllowOrigin
@@ -237,7 +254,13 @@ func overrideWithEnv(cfg *AppConfig) {
 		}
 	}
 
+	cfg.MQProvider = getenv("MQ_PROVIDER", cfg.MQProvider)
 	cfg.RabbitMQURL = getenv("RABBITMQ_URL", cfg.RabbitMQURL)
+	cfg.RocketMQNameSrv = getenv("ROCKETMQ_NAMESRV", cfg.RocketMQNameSrv)
+
+	if raw := os.Getenv("MQ_AUTO_DECLARE"); raw != "" {
+		cfg.MQAutoDeclare = toBool(raw, cfg.MQAutoDeclare)
+	}
 
 	cfg.CORSAllowOrigin = getenv("CORS_ALLOW_ORIGIN", cfg.CORSAllowOrigin)
 	cfg.ConsulAddress = getenv("CONSUL_ADDRESS", cfg.ConsulAddress)

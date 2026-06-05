@@ -82,7 +82,8 @@ make smoke          # 含 auth + order 流程
 |----|------|------|
 | redislock | `internal/platform/redislock` | 分布式锁 SET NX |
 | idempotency | `internal/platform/idempotency` | Redis 幂等快照 |
-| mq | `internal/platform/mq` | RabbitMQ 发布/消费 |
+| mq | `internal/platform/mq` | 统一 Bus（RabbitMQ 默认 / RocketMQ 可切换） |
+| order/mq | `internal/order/mq` | SettlePublisher 适配器 |
 
 ## 已知局限
 
@@ -91,4 +92,4 @@ make smoke          # 含 auth + order 流程
 - 无库存扣减、支付渠道、网关限流
 - order-service 信任网关注入的 `X-User-Id`（仅适用于内网 Demo）
 
-完整加服务步骤见 [add-service.md](add-service.md)。Redis 锁/幂等详细说明见 [redis-high-concurrency.md](redis-high-concurrency.md)。
+完整加服务步骤见 [add-service.md](add-service.md)。Redis 锁/幂等见 [redis-high-concurrency.md](redis-high-concurrency.md)。**MQ 配置、双实现切换、手动建队列/Topic** 见 [mq.md](mq.md)。

@@ -61,4 +61,4 @@ transport/http|grpc  →  app  →  repo  →  domain
 |------|------|
 | 创建订单 | POST `/v1/orders`，幂等键 + 分布式锁 |
 | 查询订单 | GET `/v1/orders/{id}` |
-| 异步结算 | 同进程 worker 消费 `order.settle` 队列 |
+| 异步结算 | 同进程 worker 经 `mq.Bus` 订阅 `order.settle`（RabbitMQ 默认 / RocketMQ 可切换） |

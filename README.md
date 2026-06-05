@@ -40,7 +40,7 @@ scripts/               # dev-up、smoke、gen-proto
 
 - MySQL：用户与订单数据
 - Redis：token 存储、幂等键、分布式锁
-- RabbitMQ：订单异步结算 Demo
+- MQ：订单异步结算（**RabbitMQ 默认**，`MQ_PROVIDER` 可切 RocketMQ，见 [mq.md](docs/architecture/mq.md)）
 - Consul：可选服务注册与发现（`CONSUL_ENABLED=false` 可关闭）
 
 ## 配置规则
@@ -87,7 +87,7 @@ make smoke
 
 | 文档 | 说明 |
 |------|------|
-| [docs/architecture/](docs/architecture/README.md) | 架构、配置、本地开发、**Redis 高并发**、**新增服务 playbook** |
+| [docs/architecture/](docs/architecture/README.md) | 架构、配置、本地开发、**Redis/MQ**、**新增服务 playbook** |
 | [docs/api/](docs/api/README.md) | API 规范与错误码 |
 | [AGENTS.md](AGENTS.md) | Cursor Agent 指引 |
 | [CHANGELOG.md](CHANGELOG.md) | 变更日志 |

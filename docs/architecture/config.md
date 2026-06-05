@@ -28,7 +28,10 @@
 | `REDIS_ADDR` | Redis 地址 | — |
 | `REDIS_PASSWORD` | Redis 密码 | — |
 | `REDIS_DB` | Redis DB 序号 | 0 |
-| `RABBITMQ_URL` | RabbitMQ AMQP 连接串 | amqp://guest:guest@127.0.0.1:5672/ |
+| `MQ_PROVIDER` | MQ 实现：`rabbitmq`（默认）或 `rocketmq` | rabbitmq |
+| `MQ_AUTO_DECLARE` | Rabbit 启动时自动声明 exchange/queue | true |
+| `RABBITMQ_URL` | RabbitMQ AMQP 连接串（provider=rabbitmq 时必填） | amqp://guest:guest@127.0.0.1:5672/ |
+| `ROCKETMQ_NAMESRV` | RocketMQ NameServer（provider=rocketmq 时必填） | 127.0.0.1:9876 |
 | `CONSUL_ENABLED` | 是否启用 Consul | false |
 | `CONSUL_ADDRESS` | Consul 地址 | 127.0.0.1:8500 |
 | `CONSUL_DATACENTER` | Consul DC | dc1 |
@@ -55,7 +58,8 @@
 | Consul | 通常关闭 | 按需开启 |
 | CORS | `localhost:5173` | 正式前端域名 |
 
-## 可选基础设施
+## 消息队列
 
-- **RabbitMQ**：order-service Demo 使用，配置 `RABBITMQ_URL`；Compose 已内置 `rabbitmq` 服务。
-- `scripts/rabbitmq-*.command`：本机辅助脚本，非 Compose 必需。
+- 统一抽象：[`mq.md`](mq.md)
+- 默认 **RabbitMQ**（Compose 已内置）；切换 **RocketMQ** 设置 `MQ_PROVIDER=rocketmq`
+- `scripts/rabbitmq-*.command`：本机辅助脚本，非 Compose 必需

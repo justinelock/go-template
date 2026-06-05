@@ -9,17 +9,22 @@ import (
 	"go-template/internal/platform/mq"
 )
 
-// StartSettlement 启动 RabbitMQ 结算消费者（同进程 Demo）。
-func StartSettlement(mqClient *mq.Client, svc *orderapp.Service) error {
-	// 步骤 1：注册 consume handler。
-	return mqClient.ConsumeSettle(func(orderID string) error {
-		// 步骤 2：模拟结算耗时。
+// StartSettlement 订阅 order.settle 并异步更新订单为 settled。
+func StartSettlement(bus mq.Bus, svc *orderapp.Service) error {
+	// 步骤 1：后台长期运行的消费上下文（进程退出时随 main 结束）。
+	ctx := context.Background()
+
+	// 步骤 2：订阅逻辑 Topic + ConsumerGroup，与 MQ 实现无关。
+	return bus.Subscribe(ctx, mq.TopicOrderSettle, mq.GroupOrderSettlement, func(ctx context.Context, msg mq.Message) error {
+		orderID := string(msg.Body)
+
+		// 步骤 3：模拟结算耗时。
 		time.Sleep(200 * time.Millisecond)
 
-		// 步骤 3：更新订单状态为 settled。
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		// 步骤 4：更新订单状态为 settled。
+		callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
-		if err := svc.SettleOrder(ctx, orderID); err != nil {
+		if err := svc.SettleOrder(callCtx, orderID); err != nil {
 			log.Printf("settlement failed order=%s err=%v", orderID, err)
 			return err
 		}

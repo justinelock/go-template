@@ -51,6 +51,7 @@ flowchart LR
 | [add-service.md](add-service.md) | **新增微服务 playbook** |
 | [order-demo.md](order-demo.md) | 订单 Demo（Redis/MQ 高并发示例） |
 | [redis-high-concurrency.md](redis-high-concurrency.md) | **Redis 高并发**：分布式锁、幂等、场景示例 |
+| [mq.md](mq.md) | **MQ 统一 Bus**：RabbitMQ/RocketMQ 切换、配置、Demo 用法 |
 
 ## 对外原则
 

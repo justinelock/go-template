@@ -7,6 +7,7 @@ import (
 	"time"
 
 	orderapp "go-template/internal/order/app"
+	ordermq "go-template/internal/order/mq"
 	"go-template/internal/order/repo"
 	httptransport "go-template/internal/order/transport/http"
 	"go-template/internal/order/worker"
@@ -54,20 +55,22 @@ func main() {
 	}
 	defer rdb.Close()
 
-	// 步骤 5：连接 RabbitMQ 并声明结算队列。
-	mqClient, err := mq.Connect(cfg.RabbitMQURL)
+	// 步骤 5：按 MQ_PROVIDER 创建统一 Bus（默认 rabbitmq）。
+	bus, err := mq.New(cfg)
 	if err != nil {
-		log.Fatalf("rabbitmq init failed: %v", err)
+		log.Fatalf("mq init failed: %v", err)
 	}
-	defer mqClient.Close()
+	defer bus.Close()
+	log.Printf("mq provider=%s", cfg.MQProvider)
 
-	// 步骤 6：组装 repo / 幂等存储 / app 用例层。
+	// 步骤 6：组装 repo / 幂等 / app（发布经 SettlePublisher 适配 Bus）。
 	orderRepo := repo.NewMySQLOrderRepo(db)
 	idemStore := idempotency.NewStore(rdb, 24*time.Hour)
-	svc := orderapp.NewService(orderRepo, idemStore, rdb, mqClient)
+	publisher := ordermq.NewSettlePublisher(bus)
+	svc := orderapp.NewService(orderRepo, idemStore, rdb, publisher)
 
-	// 步骤 7：启动同进程结算 worker（Demo：消费 order.settle 队列）。
-	if err := worker.StartSettlement(mqClient, svc); err != nil {
+	// 步骤 7：启动结算 worker（订阅 order.settle）。
+	if err := worker.StartSettlement(bus, svc); err != nil {
 		log.Fatalf("settlement worker failed: %v", err)
 	}
 
