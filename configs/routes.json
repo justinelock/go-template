@@ -1,0 +1,13 @@
+{
+  "routes": [
+    {"public_path": "/v1/auth/login", "upstream_path": "/v1/auth/login", "service_name": "member-service", "requires_auth": false},
+    {"public_path": "/v1/auth/register", "upstream_path": "/v1/auth/register", "service_name": "member-service", "requires_auth": false},
+    {"public_path": "/v1/auth/logout", "upstream_path": "/v1/auth/logout", "service_name": "member-service", "requires_auth": true},
+    {"public_path": "/v1/auth/refresh", "upstream_path": "/v1/auth/refresh", "service_name": "member-service", "requires_auth": false},
+    {"public_path": "/v1/member/users/profile", "upstream_path": "/v1/users/profile", "service_name": "member-service", "requires_auth": true},
+    {"public_path": "/v1/order/orders", "upstream_path": "/v1/orders", "service_name": "order-service", "requires_auth": true},
+    {"public_path": "/v1/payment/payments", "upstream_path": "/v1/payments", "service_name": "payment-service", "requires_auth": true},
+    {"public_path": "/v1/order/orders/", "upstream_path": "/v1/orders/", "service_name": "order-service", "requires_auth": true, "match": "prefix"},
+    {"public_path": "/v1/payment/payments/", "upstream_path": "/v1/payments/", "service_name": "payment-service", "requires_auth": true, "match": "prefix"}
+  ]
+}

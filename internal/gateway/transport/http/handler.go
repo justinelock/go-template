@@ -77,22 +77,43 @@ func (h *Handler) BuildServer(mux *http.ServeMux) http.Handler {
 
 // RegisterRoutes 注册网关公开路由。
 // 约束：网关仅做鉴权、路由、协议转发，不承载业务实现。
+//
+// 业务代理路由不再逐条注册到 mux（标准库 mux 无法运行时增删），
+// 改为统一挂载到 catch-all "/"，请求时查 routes 原子快照分发，从而支持热加载。
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
-	// 步骤 1：基础健康检查与公开配置。
+	// 步骤 1：公开配置（显式路由优先级高于 catch-all）。
 	mux.HandleFunc("/v1/public/config", h.publicConfig)
 
-	// 步骤 2：按声明式路由表注册反向代理（见 internal/gateway/routes/routes.go）。
-	for _, route := range routes.ProxyRoutes {
-		mux.HandleFunc(route.PublicPath, h.proxyToService(route))
-	}
-
-	// 步骤 2b：前缀匹配代理（订单详情 GET /v1/order/orders/{id} 等）。
-	for _, route := range routes.ProxyPrefixRoutes {
-		mux.HandleFunc(route.PublicPath, h.proxyPrefixToService(route))
-	}
-
-	// 步骤 3：WebSocket 占位（规范见 docs/api/websocket.md）。
+	// 步骤 2：WebSocket 占位（规范见 docs/api/websocket.md）。
 	mux.HandleFunc("/v1/ws", h.websocketPlaceholder)
+
+	// 步骤 3：catch-all 动态分发，按可热加载的路由表代理到下游。
+	mux.HandleFunc("/", h.dispatch)
+}
+
+// dispatch 按运行时路由快照（支持热加载）将请求代理到下游服务。
+func (h *Handler) dispatch(w http.ResponseWriter, r *http.Request) {
+	// 步骤 1：查路由表（原子快照，精确优先、前缀兜底）。
+	route, ok := routes.Match(r.URL.Path)
+	if !ok {
+		traceID := httpx.EnsureTraceID(r)
+		httpx.JSON(w, http.StatusNotFound, traceID, errcode.RouteNotFound, errcode.MsgRouteNotFound, nil)
+		return
+	}
+
+	// 步骤 2：解析下游基址（优先路由自带直连基址，其次服务发现/静态回退）。
+	fallback := route.UpstreamBaseURL
+	if fallback == "" {
+		fallback = h.serviceFallbackURL(route.ServiceName)
+	}
+	base := h.resolve(route.ServiceName, fallback)
+
+	// 步骤 3：拼接下游完整 URL（前缀路由追加尾段，如 /{id}）。
+	target := base + route.UpstreamTargetPath(r.URL.Path)
+
+	// 步骤 4：透传 query 参数后执行反向代理。
+	target = appendRawQuery(target, r)
+	h.proxy(w, r, route.ServiceName, target)
 }
 
 // websocketPlaceholder WebSocket 未实现时返回 501 与业务码 50101。
@@ -110,35 +131,6 @@ func (h *Handler) publicConfig(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, traceID, errcode.OK, errcode.MsgOK, vo.PublicConfigResp{
 		Env: "local",
 	})
-}
-
-// proxyToService 按路由表构造下游代理 handler。
-func (h *Handler) proxyToService(route routes.ProxyRoute) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// 步骤 1：按服务名解析回退基址与下游完整 URL。
-		fallback := h.serviceFallbackURL(route.ServiceName)
-		target := h.resolve(route.ServiceName, fallback) + route.UpstreamPath
-
-		// 步骤 2：透传 query 参数，避免筛选条件丢失。
-		target = appendRawQuery(target, r)
-
-		h.proxy(w, r, route.ServiceName, target)
-	}
-}
-
-// proxyPrefixToService 按前缀路由表构造下游代理 handler。
-func (h *Handler) proxyPrefixToService(route routes.ProxyRoute) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// 步骤 1：截取 public 前缀后的路径段并拼接到下游。
-		suffix := strings.TrimPrefix(r.URL.Path, route.PublicPath)
-		fallback := h.serviceFallbackURL(route.ServiceName)
-		target := h.resolve(route.ServiceName, fallback) + route.UpstreamPath + suffix
-
-		// 步骤 2：透传 query 参数。
-		target = appendRawQuery(target, r)
-
-		h.proxy(w, r, route.ServiceName, target)
-	}
 }
 
 // serviceFallbackURL 返回服务发现失败时的静态回退基址。

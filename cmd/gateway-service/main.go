@@ -10,6 +10,7 @@ import (
 	memberv1 "go-template/api/gen/member/v1"
 	gatewayapp "go-template/internal/gateway/app"
 	membergrpc "go-template/internal/gateway/client/membergrpc"
+	"go-template/internal/gateway/routes"
 	httptransport "go-template/internal/gateway/transport/http"
 	"go-template/internal/platform/config"
 	"go-template/internal/platform/discovery"
@@ -113,6 +114,14 @@ func main() {
 		limiter,
 		cfg.RateLimitEnabled,
 		gatewayresilience.NewBreakerPool(),
+	)
+
+	// 步骤 5.2：启动路由表热加载（文件缺失时回退内置默认路由，坏配置保留旧表）。
+	routes.StartReloader(
+		context.Background(),
+		cfg.RoutesConfigPath,
+		time.Duration(cfg.RoutesReloadSec)*time.Second,
+		slog.Default(),
 	)
 
 	// 步骤 6：注册健康检查、指标与业务路由。

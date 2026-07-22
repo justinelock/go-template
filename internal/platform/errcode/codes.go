@@ -22,6 +22,7 @@ const (
 	LoginFailed             = 50001
 	ProxyBuildFailed        = 50001 // gateway 与 member 复用码值，语义不同见文档
 	DownstreamUnavailable   = 50002
+	RouteNotFound           = 40404 // gateway 未匹配到任何路由
 	LogoutFailed            = 50006
 	TokenVerifyFailed       = 50007
 	RegisterFailed          = 50008
@@ -63,6 +64,7 @@ const (
 	MsgLoginFailed              = "login failed"
 	MsgProxyBuildFailed         = "proxy build request failed"
 	MsgDownstreamUnavailable    = "downstream service unavailable"
+	MsgRouteNotFound            = "route not found"
 	MsgLogoutFailed             = "logout failed"
 	MsgTokenVerifyFailed        = "token verify failed"
 	MsgRegisterFailed           = "register failed"

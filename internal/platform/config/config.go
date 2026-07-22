@@ -52,6 +52,11 @@ type AppConfig struct {
 
 	GatewayProxyTimeoutSec int `json:"gateway_proxy_timeout_sec"`
 
+	// RoutesConfigPath 网关路由表文件路径（留空则仅用代码内置默认路由）。
+	RoutesConfigPath string `json:"routes_config_path"`
+	// RoutesReloadSec 路由文件热加载轮询间隔秒数（<=0 时仅靠 SIGHUP 触发）。
+	RoutesReloadSec int `json:"routes_reload_sec"`
+
 	PaymentServicePort    string `json:"payment_service_port"`
 	PaymentServiceURL     string `json:"payment_service_url"`
 	PaymentMockPayEnabled bool   `json:"payment_mock_pay_enabled"`
@@ -128,6 +133,9 @@ func defaultConfig() *AppConfig {
 		RateLimitRedisPrefix: "ratelimit",
 
 		GatewayProxyTimeoutSec: 5,
+
+		RoutesConfigPath: "configs/routes.json",
+		RoutesReloadSec:  10,
 
 		PaymentServicePort:    "8183",
 		PaymentServiceURL:     "http://127.0.0.1:8183",
@@ -283,6 +291,12 @@ func merge(dst, src *AppConfig) {
 	if src.GatewayProxyTimeoutSec > 0 {
 		dst.GatewayProxyTimeoutSec = src.GatewayProxyTimeoutSec
 	}
+	if src.RoutesConfigPath != "" {
+		dst.RoutesConfigPath = src.RoutesConfigPath
+	}
+	if src.RoutesReloadSec > 0 {
+		dst.RoutesReloadSec = src.RoutesReloadSec
+	}
 	if src.ConsulEnabled {
 		dst.ConsulEnabled = true
 	}
@@ -337,6 +351,13 @@ func overrideWithEnv(cfg *AppConfig) {
 	if raw := os.Getenv("GATEWAY_PROXY_TIMEOUT_SEC"); raw != "" {
 		if parsed, err := strconv.Atoi(raw); err == nil {
 			cfg.GatewayProxyTimeoutSec = parsed
+		}
+	}
+
+	cfg.RoutesConfigPath = getenv("ROUTES_CONFIG_PATH", cfg.RoutesConfigPath)
+	if raw := os.Getenv("ROUTES_RELOAD_SEC"); raw != "" {
+		if parsed, err := strconv.Atoi(raw); err == nil {
+			cfg.RoutesReloadSec = parsed
 		}
 	}
 
