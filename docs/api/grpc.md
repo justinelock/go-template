@@ -35,6 +35,7 @@
 | `message` | string | `ok` |
 | `user_id` | string | 用户 ID |
 | `trace_id` | string | 回显 |
+| `role` | string | 用户角色（简易 RBAC） |
 
 ### gRPC status vs 消息内 code
 

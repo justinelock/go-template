@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **api/gen/member/v1**：重新生成 `auth.pb.go`，修复损坏的 `rawDesc`（options 长度字节错误且缺 `role` 字段），消除 gateway/member 在 import proto 的 `init` 阶段 `slice bounds out of range [-4:]` 启动崩溃；补充 `TestFileDescriptorInit` 防止再漏检。
+
 ### Changed
 
 - **configs/.env.example / configs/.env**：恢复并统一分组 `#` 注释；约定同步时不得剥离注释（见 `config-env.mdc`）。

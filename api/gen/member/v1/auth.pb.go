@@ -156,15 +156,16 @@ const file_member_v1_auth_proto_rawDesc = "" +
 	"\x14member/v1/auth.proto\x12\tmember.v1\"D\n" +
 	"\x11IntrospectRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x19\n" +
-	"\btrace_id\x18\x02 \x01(\tR\atraceId\"v\n" +
+	"\btrace_id\x18\x02 \x01(\tR\atraceId\"\x8a\x01\n" +
 	"\x12IntrospectResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x19\n" +
-	"\btrace_id\x18\x04 \x01(\tR\atraceId2X\n" +
+	"\btrace_id\x18\x04 \x01(\tR\atraceId\x12\x12\n" +
+	"\x04role\x18\x05 \x01(\tR\x04role2X\n" +
 	"\vAuthService\x12I\n" +
 	"\n" +
-	"Introspect\x12\x1c.member.v1.IntrospectRequest\x1a\x1d.member.v1.IntrospectResponseB.Z,go-template/api/gen/member/v1;memberv1b\x06proto3"
+	"Introspect\x12\x1c.member.v1.IntrospectRequest\x1a\x1d.member.v1.IntrospectResponseB(Z&go-template/api/gen/member/v1;memberv1b\x06proto3"
 
 var (
 	file_member_v1_auth_proto_rawDescOnce sync.Once
